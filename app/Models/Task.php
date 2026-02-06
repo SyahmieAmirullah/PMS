@@ -10,9 +10,7 @@ class Task extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'task';
-    protected $primarykey= 'TaskID';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    // Use default primary key 'id'
     protected $fillable = [
         'TaskNAME',
         'TaskDESC',
@@ -27,7 +25,7 @@ class Task extends Model
     // Relationships
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID','ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     // Scopes for filtering

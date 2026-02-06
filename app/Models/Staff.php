@@ -11,8 +11,7 @@ class Staff extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'staff';
-    protected $primaryKey = 'StaffID';
-    public $incrementing = true;
+    // Use default primary key 'id'
     protected $fillable = [
         'StaffNAME',
         'StaffPHONE',
@@ -26,7 +25,7 @@ class Staff extends Model
 
     public function roles()
     {
-        return $this->hasMany(StaffRole::class, 'StaffID');
+        return $this->hasMany(StaffRole::class, 'StaffID', 'id');
     }
 
     public function projects()

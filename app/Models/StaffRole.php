@@ -10,7 +10,7 @@ class StaffRole extends Model
     use HasFactory;
 
     protected $table = 'staff_role';
-    protected $primaryKey = 'RoleID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'StaffID',
@@ -26,6 +26,6 @@ class StaffRole extends Model
     // Role belongs to a staff member
     public function staff()
     {
-        return $this->belongsTo(Staff::class, 'StaffID', 'StaffID');
+        return $this->belongsTo(Staff::class, 'StaffID', 'id');
     }
 }

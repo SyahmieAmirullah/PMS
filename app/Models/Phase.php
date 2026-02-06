@@ -10,9 +10,7 @@ class Phase extends Model
     use HasFactory;
 
     protected $table = 'phase';
-    protected $primaryKey = 'PhaseID';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    // Use default primary key 'id'
     protected $fillable = [
         'ProjectID',
         'PhaseNAME',
@@ -32,7 +30,7 @@ class Phase extends Model
     // Phase belongs to a project
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID', 'ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     // Phase has many documents

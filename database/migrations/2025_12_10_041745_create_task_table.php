@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('task', function (Blueprint $table) {
-            $table->id('TaskID');
-            $table->foreignId('ProjectID')->constrained('project', 'ProjectID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('ProjectID')->constrained('project', 'id')->onDelete('cascade');
             $table->string('TaskNAME');
             $table->text('TaskDESC')->nullable();
             $table->date('TaskDUE')->nullable();

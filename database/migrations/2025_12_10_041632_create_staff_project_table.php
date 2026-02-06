@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('staff_project', function (Blueprint $table) {
             $table->id(); // auto-increment primary key
-            $table->foreignId('StaffID')->constrained('staff', 'StaffID')->onDelete('cascade');
-            $table->foreignId('ProjectID')->constrained('project', 'ProjectID')->onDelete('cascade');
+            $table->foreignId('StaffID')->constrained('staff', 'id')->onDelete('cascade');
+            $table->foreignId('ProjectID')->constrained('project', 'id')->onDelete('cascade');
             $table->date('ProjectSTART')->nullable();
             $table->date('ProjectDUE')->nullable();
             $table->timestamps();

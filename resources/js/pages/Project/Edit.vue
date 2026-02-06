@@ -51,14 +51,20 @@ const form = ref({
 const errors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
 
-const projectStatuses = ['Active', 'Completed', 'On Hold', 'Cancelled'];
+const projectStatuses = [
+  { value: 'planning', label: 'Planning' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 // Populate form with existing data
 onMounted(() => {
   form.value = {
     ProjectNAME: props.project.ProjectNAME || '',
     ProjectDESC: props.project.ProjectDESC || '',
-    ProjectSTATUS: props.project.ProjectSTATUS || 'Active',
+    ProjectSTATUS: props.project.ProjectSTATUS || 'planning',
     ClientNAME: props.project.ClientNAME || '',
     ClientPHONE: props.project.ClientPHONE || '',
     ClientEMAIL: props.project.ClientEMAIL || '',
@@ -93,18 +99,17 @@ const isValidEmail = (email: string) => {
   return emailRegex.test(email);
 };
 
-const toggleStaff = (staffId: number) => {
+const setStaffSelected = (staffId: number, checked: boolean | 'indeterminate') => {
+  const isChecked = checked === true;
   const index = form.value.staff_ids.indexOf(staffId);
-  if (index > -1) {
-    form.value.staff_ids.splice(index, 1);
-  } else {
+  if (isChecked && index === -1) {
     form.value.staff_ids.push(staffId);
+  } else if (!isChecked && index > -1) {
+    form.value.staff_ids.splice(index, 1);
   }
 };
 
-const isStaffSelected = (staffId: number) => {
-  return form.value.staff_ids.includes(staffId);
-};
+const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(staffId);
 
 const submitForm = () => {
   if (!validateForm()) {
@@ -185,10 +190,10 @@ const goBack = () => {
                     <SelectLabel>Project Status</SelectLabel>
                     <SelectItem
                       v-for="status in projectStatuses"
-                      :key="status"
-                      :value="status"
+                      :key="status.value"
+                      :value="status.value"
                     >
-                      {{ status }}
+                      {{ status.label }}
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -246,16 +251,16 @@ const goBack = () => {
           <div class="space-y-2">
             <div
               v-for="staff in staffList"
-              :key="staff.StaffID"
+              :key="staff.id"
               class="flex items-center space-x-3 rounded-lg border p-3 hover:bg-gray-50"
             >
               <Checkbox
-                :id="`staff-${staff.StaffID}`"
-                :checked="isStaffSelected(staff.StaffID)"
-                @update:checked="toggleStaff(staff.StaffID)"
+                :id="`staff-${staff.id}`"
+                :checked="isStaffSelected(staff.id)"
+                @update:checked="(checked) => setStaffSelected(staff.id, checked)"
               />
               <label
-                :for="`staff-${staff.StaffID}`"
+                :for="`staff-${staff.id}`"
                 class="flex-1 cursor-pointer text-sm font-medium"
               >
                 <div>{{ staff.StaffNAME }}</div>

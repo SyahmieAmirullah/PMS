@@ -14,7 +14,11 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         $query = Project::with(['staff', 'phases', 'tasks'])
-            ->withCount(['tasks', 'phases', 'feedback'])
+            ->withCount([
+                'tasks',
+                'phases',
+                'feedback',
+            ])
             ->orderBy('created_at', 'desc');
 
         // Apply filters
@@ -40,14 +44,14 @@ class ProjectController extends Controller
         $projects = $query->paginate((int)$perPage)->withQueryString();
 
         // Get all staff for filter dropdown
-        $staffList = Staff::select('StaffID', 'StaffNAME')->orderBy('StaffNAME')->get();
+        $staffList = Staff::select('id', 'StaffNAME')->orderBy('StaffNAME')->get();
 
         // Statistics
         $stats = [
             'total' => Project::count(),
-            'active' => Project::where('ProjectSTATUS', 'Active')->count(),
-            'completed' => Project::where('ProjectSTATUS', 'Completed')->count(),
-            'onHold' => Project::where('ProjectSTATUS', 'On Hold')->count(),
+            'active' => Project::where('ProjectSTATUS', 'in_progress')->count(),
+            'completed' => Project::where('ProjectSTATUS', 'completed')->count(),
+            'onHold' => Project::where('ProjectSTATUS', 'on_hold')->count(),
         ];
 
         return Inertia::render('Project/Index', [
@@ -59,7 +63,7 @@ class ProjectController extends Controller
 
     public function create()
     {
-        $staffList = Staff::select('StaffID', 'StaffNAME', 'StaffEMAIL')
+        $staffList = Staff::select('id', 'StaffNAME', 'StaffEMAIL')
             ->orderBy('StaffNAME')
             ->get();
 
@@ -70,10 +74,31 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
+        $statusMap = [
+            'Planning' => 'planning',
+            'In Progress' => 'in_progress',
+            'On Hold' => 'on_hold',
+            'Completed' => 'completed',
+            'Cancelled' => 'cancelled',
+            'planning' => 'planning',
+            'in_progress' => 'in_progress',
+            'on_hold' => 'on_hold',
+            'completed' => 'completed',
+            'cancelled' => 'cancelled',
+        ];
+
+        if ($request->filled('ProjectSTATUS')) {
+            $incomingStatus = $request->input('ProjectSTATUS');
+            if (isset($statusMap[$incomingStatus])) {
+                $request->merge(['ProjectSTATUS' => $statusMap[$incomingStatus]]);
+            }
+        }
+
         $validated = $request->validate([
             'ProjectNAME' => 'required|string|max:255',
             'ProjectDESC' => 'nullable|string',
-            'ProjectSTATUS' => ['required', Rule::in(['Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'])],
+            'ProjectSTATUS' => ['required', Rule::in(['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])],
             'ClientNAME' => 'required|string|max:255',
             'ClientPHONE' => 'nullable|string|max:20',
             'ClientEMAIL' => 'nullable|email|max:255',
@@ -155,11 +180,30 @@ class ProjectController extends Controller
 
     public function update(Request $request, $id)
     {
-        dd($request);
+        $statusMap = [
+            'Planning' => 'planning',
+            'In Progress' => 'in_progress',
+            'On Hold' => 'on_hold',
+            'Completed' => 'completed',
+            'Cancelled' => 'cancelled',
+            'planning' => 'planning',
+            'in_progress' => 'in_progress',
+            'on_hold' => 'on_hold',
+            'completed' => 'completed',
+            'cancelled' => 'cancelled',
+        ];
+
+        if ($request->filled('ProjectSTATUS')) {
+            $incomingStatus = $request->input('ProjectSTATUS');
+            if (isset($statusMap[$incomingStatus])) {
+                $request->merge(['ProjectSTATUS' => $statusMap[$incomingStatus]]);
+            }
+        }
+
         $validated = $request->validate([
             'ProjectNAME' => 'required|string|max:255',
             'ProjectDESC' => 'nullable|string',
-            'ProjectSTATUS' => ['required', Rule::in(['Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'])],
+            'ProjectSTATUS' => ['required', Rule::in(['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])],
             'ClientNAME' => 'required|string|max:255',
             'ClientPHONE' => 'nullable|string|max:20',
             'ClientEMAIL' => 'nullable|email|max:255',

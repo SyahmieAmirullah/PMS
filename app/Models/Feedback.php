@@ -10,7 +10,7 @@ class Feedback extends Model
     use HasFactory;
 
     protected $table = 'feedback';
-    protected $primaryKey = 'FeedbackID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'ProjectID',
@@ -30,7 +30,7 @@ class Feedback extends Model
     // Feedback belongs to a project
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID', 'ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     /**

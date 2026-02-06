@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document', function (Blueprint $table) {
-            $table->id('DocumentID');
-            $table->foreignId('PhaseID')->constrained('phase', 'PhaseID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('PhaseID')->constrained('phase', 'id')->onDelete('cascade');
             $table->string('DocumentNAME');
             $table->date('DocumentDATE');
             $table->string('DocumentVERSION')->default('1.0');

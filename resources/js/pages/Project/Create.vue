@@ -36,7 +36,7 @@ const props = defineProps({
 const form = ref({
   ProjectNAME: '',
   ProjectDESC: '',
-  ProjectSTATUS: 'Planning',
+  ProjectSTATUS: 'planning',
   ClientNAME: '',
   ClientPHONE: '',
   ClientEMAIL: '',
@@ -48,7 +48,13 @@ const form = ref({
 const errors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
 
-const projectStatuses = ['Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+const projectStatuses = [
+  { value: 'planning', label: 'Planning' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 const validateForm = () => {
   errors.value = {};
@@ -84,17 +90,25 @@ const isValidEmail = (email: string) => {
   return emailRegex.test(email);
 };
 
-const toggleStaff = (staffId: number) => {
+const setStaffSelected = (staffId: number, checked: boolean | 'indeterminate') => {
+  const isChecked = checked === true;
   const index = form.value.staff_ids.indexOf(staffId);
-  if (index > -1) {
-    form.value.staff_ids.splice(index, 1);
-  } else {
+  if (isChecked && index === -1) {
     form.value.staff_ids.push(staffId);
+  } else if (!isChecked && index > -1) {
+    form.value.staff_ids.splice(index, 1);
   }
 };
 
-const isStaffSelected = (staffId: number) => {
-  return form.value.staff_ids.includes(staffId);
+const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(staffId);
+const toggleStaff = (staffId: number) => {
+  const index = form.value.staff_ids.indexOf(staffId);
+
+  if (index === -1) {
+    form.value.staff_ids.push(staffId);
+  } else {
+    form.value.staff_ids.splice(index, 1);
+  }
 };
 
 const submitForm = () => {
@@ -105,7 +119,7 @@ const submitForm = () => {
 
   isSubmitting.value = true;
 
-  router.post('/projects/create', form.value, {
+  router.post('/projects', form.value, {
     onSuccess: () => {
       toast.success('Project created successfully!');
       isSubmitting.value = false;
@@ -173,10 +187,10 @@ const goBack = () => {
                     <SelectLabel>Project Status</SelectLabel>
                     <SelectItem
                       v-for="status in projectStatuses"
-                      :key="status"
-                      :value="status"
+                      :key="status.value"
+                      :value="status.value"
                     >
-                      {{ status }}
+                      {{ status.label }}
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -265,10 +279,9 @@ const goBack = () => {
               class="flex items-start space-x-3 rounded-lg border p-3 hover:bg-gray-50"
             >
               <Checkbox
-                :id="`staff-${staff.id}`"
-                :checked="isStaffSelected(staff.id)"
-                @update:checked="toggleStaff(staff.id)"
-              />
+  :checked="form.staff_ids.includes(staff.id)"
+  @click="toggleStaff(staff.id)"
+/>
               <label
                 :for="`staff-${staff.id}`"
                 class="flex-1 cursor-pointer"

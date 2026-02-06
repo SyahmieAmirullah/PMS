@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attendance', function (Blueprint $table) {
-            $table->id('AttandanceID'); // Note: keeping your ERD spelling
-            $table->foreignId('MeetingID')->constrained('meeting', 'MeetingID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('MeetingID')->constrained('meeting', 'id')->onDelete('cascade');
             $table->enum('AttandanceSTATUS', ['present', 'absent', 'late', 'excused'])->default('present');
             $table->date('AttandanceDATE');
             $table->time('AttandanceTIME')->nullable();

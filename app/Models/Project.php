@@ -10,7 +10,7 @@ class Project extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'project';
-    protected $primaryKey = 'ProjectID';
+    // Use default primary key 'id'
     protected $fillable = [
         'ProjectNAME',
         'ProjectDESC',
@@ -29,17 +29,17 @@ class Project extends Model
     // Relationships
     public function phases()
     {
-        return $this->hasMany(Phase::class, 'ProjectID','ProjectID');
+        return $this->hasMany(Phase::class, 'ProjectID', 'id');
     }
 
     public function tasks()
     {
-        return $this->hasMany(Task::class, 'ProjectID','ProjectID');
+        return $this->hasMany(Task::class, 'ProjectID', 'id');
     }
 
     public function feedback()
     {
-        return $this->hasMany(Feedback::class, 'ProjectID','ProjectID');
+        return $this->hasMany(Feedback::class, 'ProjectID', 'id');
     }
 
     public function projectLogs()
@@ -62,16 +62,16 @@ class Project extends Model
     // Scopes for filtering
     public function scopeActive($query)
     {
-        return $query->where('ProjectSTATUS', 'Active');
+        return $query->where('ProjectSTATUS', 'in_progress');
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('ProjectSTATUS', 'Completed');
+        return $query->where('ProjectSTATUS', 'completed');
     }
 
     public function scopeOnHold($query)
     {
-        return $query->where('ProjectSTATUS', 'On Hold');
+        return $query->where('ProjectSTATUS', 'on_hold');
     }
 }

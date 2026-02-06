@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('meeting', function (Blueprint $table) {
-            $table->id('MeetingID');
-            $table->foreignId('ProjectID')->constrained('project', 'ProjectID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('ProjectID')->constrained('project', 'id')->onDelete('cascade');
             $table->string('MeetingTITLE');
             $table->text('MeetingOBJECTIVE')->nullable();
             $table->date('MeetingDATE');

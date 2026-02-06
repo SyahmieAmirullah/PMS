@@ -54,13 +54,24 @@ const breadcrumbs: BreadcrumbItem[] = [
 // Status badge color
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    'Active': 'bg-green-100 text-green-700 border-green-200',
-    'Completed': 'bg-blue-100 text-blue-700 border-blue-200',
-    'On Hold': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    'Cancelled': 'bg-red-100 text-red-700 border-red-200',
+    planning: 'bg-gray-100 text-gray-700 border-gray-200',
+    in_progress: 'bg-green-100 text-green-700 border-green-200',
+    completed: 'bg-blue-100 text-blue-700 border-blue-200',
+    on_hold: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    cancelled: 'bg-red-100 text-red-700 border-red-200',
   };
   return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
 };
+
+const statusLabels: Record<string, string> = {
+  planning: 'Planning',
+  in_progress: 'In Progress',
+  on_hold: 'On Hold',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
+const formatStatus = (status: string) => statusLabels[status] || status;
 
 // Task status color
 const getTaskStatusColor = (status: string) => {
@@ -120,11 +131,11 @@ const taskStats = computed(() => {
           <div>
             <BaseTitle size="2xl">{{ project.ProjectNAME }}</BaseTitle>
             <Badge :class="getStatusColor(project.ProjectSTATUS)" class="mt-2">
-              {{ project.ProjectSTATUS }}
+              {{ formatStatus(project.ProjectSTATUS) }}
             </Badge>
           </div>
         </div>
-        <Link :href="`/projects/${project.ProjectID}/edit`" class="no-underline">
+        <Link :href="`/projects/${project.id}/edit`" class="no-underline">
           <Button>Edit Project</Button>
         </Link>
       </div>

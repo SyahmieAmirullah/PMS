@@ -10,7 +10,7 @@ class ProjectLog extends Model
     use HasFactory;
 
     protected $table = 'project_logs';
-    protected $primaryKey = 'ProjectLogsID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'ProjectID',
@@ -33,7 +33,7 @@ class ProjectLog extends Model
     // Log belongs to a project
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID', 'ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     /**

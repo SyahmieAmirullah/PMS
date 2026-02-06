@@ -47,7 +47,7 @@ class StaffController extends Controller
             'withProjects' => Staff::has('projects')->count(),
             'roles' => StaffRole::count(),
             'activeProjects' => Staff::whereHas('projects', function($q) {
-                $q->where('ProjectSTATUS', 'Active');
+                $q->where('ProjectSTATUS', 'in_progress');
             })->count(),
         ];
 
@@ -83,18 +83,23 @@ class StaffController extends Controller
             'StaffPASSWORD' => Hash::make($validated['StaffPASSWORD']),
         ]);
 
-        // Create roles if provided
-        if (!empty($validated['roles'])) {
-            foreach ($validated['roles'] as $role) {
-                if (!empty($role['RoleTYPE'])) {
-                    StaffRole::create([
-                        'StaffID' => $staff->StaffID,
-                        'RoleTYPE' => $role['RoleTYPE'],
-                        'RoleDESC' => $role['RoleDESC'] ?? null,
-                        'RolePRO' => $role['RolePRO'] ?? null,
-                    ]);
-                }
-            }
+        // Create roles if provided (ensure required DB fields are not null)
+        $roles = collect($validated['roles'] ?? [])
+            ->filter(function ($role) {
+                return !empty($role['RoleTYPE']);
+            })
+            ->map(function ($role) {
+                return [
+                    'RoleTYPE' => trim($role['RoleTYPE']),
+                    'RoleDESC' => isset($role['RoleDESC']) ? trim($role['RoleDESC']) : '',
+                    'RolePRO' => $role['RolePRO'] ?? null,
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (!empty($roles)) {
+            $staff->roles()->createMany($roles);
         }
 
         return redirect()
@@ -159,17 +164,24 @@ class StaffController extends Controller
         if (isset($validated['roles'])) {
             // Delete existing roles
             $staff->roles()->delete();
-            
+
             // Create new roles
-            foreach ($validated['roles'] as $role) {
-                if (!empty($role['RoleTYPE'])) {
-                    StaffRole::create([
-                        'StaffID' => $staff->id,
-                        'RoleTYPE' => $role['RoleTYPE'],
-                        'RoleDESC' => $role['RoleDESC'] ?? null,
+            $roles = collect($validated['roles'])
+                ->filter(function ($role) {
+                    return !empty($role['RoleTYPE']);
+                })
+                ->map(function ($role) {
+                    return [
+                        'RoleTYPE' => trim($role['RoleTYPE']),
+                        'RoleDESC' => isset($role['RoleDESC']) ? trim($role['RoleDESC']) : '',
                         'RolePRO' => $role['RolePRO'] ?? null,
-                    ]);
-                }
+                    ];
+                })
+                ->values()
+                ->all();
+
+            if (!empty($roles)) {
+                $staff->roles()->createMany($roles);
             }
         }
 

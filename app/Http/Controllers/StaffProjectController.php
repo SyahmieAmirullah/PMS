@@ -37,12 +37,12 @@ class StaffProjectController extends Controller
             $status = $request->input('status');
             if ($status === 'active') {
                 $query->whereHas('project', function($q) {
-                    $q->where('ProjectSTATUS', 'Active');
+                    $q->where('ProjectSTATUS', 'in_progress');
                 });
             } elseif ($status === 'overdue') {
                 $query->where('ProjectDUE', '<', now())
                     ->whereHas('project', function($q) {
-                        $q->whereNotIn('ProjectSTATUS', ['Completed', 'Cancelled']);
+                        $q->whereNotIn('ProjectSTATUS', ['completed', 'cancelled']);
                     });
             }
         }
@@ -58,11 +58,11 @@ class StaffProjectController extends Controller
         $stats = [
             'total' => StaffProject::count(),
             'active' => StaffProject::whereHas('project', function($q) {
-                $q->where('ProjectSTATUS', 'Active');
+                $q->where('ProjectSTATUS', 'in_progress');
             })->count(),
             'overdue' => StaffProject::where('ProjectDUE', '<', now())
                 ->whereHas('project', function($q) {
-                    $q->whereNotIn('ProjectSTATUS', ['Completed', 'Cancelled']);
+                    $q->whereNotIn('ProjectSTATUS', ['completed', 'cancelled']);
                 })->count(),
             'thisMonth' => StaffProject::whereBetween('ProjectSTART', [
                 now()->startOfMonth(),
@@ -103,7 +103,7 @@ class StaffProjectController extends Controller
     {
         $validated = $request->validate([
             'StaffID' => 'required|exists:staff,id',
-            'ProjectID' => 'required|exists:projects,id',
+            'ProjectID' => 'required|exists:project,id',
             'ProjectSTART' => 'required|date',
             'ProjectDUE' => 'required|date|after_or_equal:ProjectSTART',
         ]);
@@ -160,7 +160,7 @@ class StaffProjectController extends Controller
     {
         $validated = $request->validate([
             'StaffID' => 'required|exists:staff,id',
-            'ProjectID' => 'required|exists:projects,id',
+            'ProjectID' => 'required|exists:project,id',
             'ProjectSTART' => 'required|date',
             'ProjectDUE' => 'required|date|after_or_equal:ProjectSTART',
         ]);
@@ -222,7 +222,7 @@ class StaffProjectController extends Controller
     public function bulkAssign(Request $request)
     {
         $validated = $request->validate([
-            'ProjectID' => 'required|exists:projects,id',
+            'ProjectID' => 'required|exists:project,id',
             'staff_ids' => 'required|array|min:1',
             'staff_ids.*' => 'exists:staff,id',
             'ProjectSTART' => 'required|date',

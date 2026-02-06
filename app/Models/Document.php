@@ -11,7 +11,7 @@ class Document extends Model
     use HasFactory;
 
     protected $table = 'document';
-    protected $primaryKey = 'DocumentID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'PhaseID',
@@ -32,7 +32,7 @@ class Document extends Model
     // Document belongs to a phase
     public function phase()
     {
-        return $this->belongsTo(Phase::class, 'PhaseID', 'PhaseID');
+        return $this->belongsTo(Phase::class, 'PhaseID', 'id');
     }
 
     /**

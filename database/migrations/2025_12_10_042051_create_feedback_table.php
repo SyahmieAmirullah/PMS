@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('feedback', function (Blueprint $table) {
-            $table->id('FeedbackID');
-            $table->foreignId('ProjectID')->constrained('project', 'ProjectID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('ProjectID')->constrained('project', 'id')->onDelete('cascade');
             $table->string('FeedbackTITLE');
             $table->text('FeedbackDESC')->nullable();
             $table->timestamp('FeedbackTIME');

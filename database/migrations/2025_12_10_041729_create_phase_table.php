@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('phase', function (Blueprint $table) {
-            $table->id('PhaseID');
-            $table->foreignId('ProjectID')->constrained('project', 'ProjectID')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('ProjectID')->constrained('project', 'id')->onDelete('cascade');
             $table->string('PhaseNAME');
             $table->text('PhaseDESC')->nullable();
             $table->text('PhaseUPDATE')->nullable();

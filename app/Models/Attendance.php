@@ -10,7 +10,7 @@ class Attendance extends Model
     use HasFactory;
 
     protected $table = 'attendance';
-    protected $primaryKey = 'AttandanceID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'MeetingID',
@@ -33,7 +33,7 @@ class Attendance extends Model
     // Attendance belongs to a meeting
     public function meeting()
     {
-        return $this->belongsTo(Meeting::class, 'MeetingID', 'MeetingID');
+        return $this->belongsTo(Meeting::class, 'MeetingID', 'id');
     }
 
     /**

@@ -11,7 +11,7 @@ class Meeting extends Model
     use HasFactory;
 
     protected $table = 'meeting';
-    protected $primaryKey = 'MeetingID';
+    // Use default primary key 'id'
 
     protected $fillable = [
         'ProjectID',
@@ -33,7 +33,7 @@ class Meeting extends Model
     // Meeting belongs to a project
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID', 'ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     // Meeting has many attendance records

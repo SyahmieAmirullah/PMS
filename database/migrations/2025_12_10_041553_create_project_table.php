@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('project', function (Blueprint $table) {
-            $table->id('ProjectID');
+            $table->id();
             $table->string('ProjectNAME');
             $table->text('ProjectDESC')->nullable();
             $table->enum('ProjectSTATUS', ['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])->default('planning');

@@ -27,19 +27,19 @@ class StaffProject extends Model
     // Relationships
     public function staff()
     {
-        return $this->belongsTo(Staff::class, 'StaffID');
+        return $this->belongsTo(Staff::class, 'StaffID', 'id');
     }
 
     public function project()
     {
-        return $this->belongsTo(Project::class, 'ProjectID');
+        return $this->belongsTo(Project::class, 'ProjectID', 'id');
     }
 
     // Scopes for filtering
     public function scopeActive($query)
     {
         return $query->whereHas('project', function($q) {
-            $q->where('ProjectSTATUS', 'Active');
+            $q->where('ProjectSTATUS', 'in_progress');
         });
     }
 
@@ -47,7 +47,7 @@ class StaffProject extends Model
     {
         return $query->where('ProjectDUE', '<', now())
             ->whereHas('project', function($q) {
-                $q->whereNotIn('ProjectSTATUS', ['Completed', 'Cancelled']);
+                $q->whereNotIn('ProjectSTATUS', ['completed', 'cancelled']);
             });
     }
 
@@ -75,7 +75,7 @@ class StaffProject extends Model
         if (!$this->ProjectDUE) return false;
         
         return $this->ProjectDUE->isPast() && 
-               !in_array($this->project->ProjectSTATUS ?? '', ['Completed', 'Cancelled']);
+               !in_array($this->project->ProjectSTATUS ?? '', ['completed', 'cancelled']);
     }
 
     // Accessor for duration in days
@@ -106,7 +106,7 @@ class StaffProject extends Model
             return 'Upcoming';
         }
         
-        if ($this->project && $this->project->ProjectSTATUS === 'Completed') {
+        if ($this->project && $this->project->ProjectSTATUS === 'completed') {
             return 'Completed';
         }
         
