@@ -16,10 +16,12 @@ class Task extends Model
         'TaskDESC',
         'TaskDUE',
         'ProjectID',
+        'TaskSTATUS',
     ];
 
     protected $casts = [
         'TaskDUE' => 'date',
+        'TaskSTATUS' => 'string',
     ];
 
     // Relationships

@@ -49,7 +49,7 @@ const isSubmitting = ref(false);
 // Set preselected project if provided
 onMounted(() => {
   if (props.preselectedProjectId) {
-    form.value.ProjectID = String(props.preselectedProjectId);
+    form.value.ProjectID = Number(props.preselectedProjectId);
   }
 });
 
@@ -143,7 +143,7 @@ const goBack = () => {
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col space-y-1">
                 <Label>Project <span class="text-red-500">*</span></Label>
-                <Select v-model="form.ProjectID">
+              <Select v-model="form.ProjectID">
                   <SelectTrigger :class="errors.ProjectID ? 'border-red-500' : ''">
                     <SelectValue placeholder="Select Project" />
                   </SelectTrigger>
@@ -152,8 +152,8 @@ const goBack = () => {
                       <SelectLabel>Projects</SelectLabel>
                       <SelectItem
                         v-for="project in projects"
-                        :key="project.ProjectID"
-                        :value="project.ProjectID"
+                        :key="project.id"
+                        :value="project.id"
                       >
                         {{ project.ProjectNAME }}
                         <span class="text-xs text-muted-foreground ml-2">

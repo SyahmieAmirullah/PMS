@@ -19,6 +19,7 @@ class Meeting extends Model
         'MeetingOBJECTIVE',
         'MeetingDATE',
         'MeetingTIME',
+        'MeetingLINK',
     ];
 
     protected $casts = [
@@ -39,7 +40,7 @@ class Meeting extends Model
     // Meeting has many attendance records
     public function attendances()
     {
-        return $this->hasMany(Attendance::class, 'MeetingID', 'MeetingID');
+        return $this->hasMany(Attendance::class, 'MeetingID', 'id');
     }
 
     /**

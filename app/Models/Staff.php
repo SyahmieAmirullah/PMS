@@ -39,6 +39,11 @@ class Staff extends Model
     {
         return $this->hasMany(StaffProject::class, 'StaffID');
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'StaffID', 'id');
+    }
     
     // Remove attendances relationship - it doesn't exist in the ERD
 }

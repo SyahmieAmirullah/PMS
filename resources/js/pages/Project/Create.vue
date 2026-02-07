@@ -91,25 +91,17 @@ const isValidEmail = (email: string) => {
 };
 
 const setStaffSelected = (staffId: number, checked: boolean | 'indeterminate') => {
+  const normalizedId = Number(staffId);
   const isChecked = checked === true;
-  const index = form.value.staff_ids.indexOf(staffId);
+  const index = form.value.staff_ids.indexOf(normalizedId);
   if (isChecked && index === -1) {
-    form.value.staff_ids.push(staffId);
+    form.value.staff_ids.push(normalizedId);
   } else if (!isChecked && index > -1) {
     form.value.staff_ids.splice(index, 1);
   }
 };
 
-const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(staffId);
-const toggleStaff = (staffId: number) => {
-  const index = form.value.staff_ids.indexOf(staffId);
-
-  if (index === -1) {
-    form.value.staff_ids.push(staffId);
-  } else {
-    form.value.staff_ids.splice(index, 1);
-  }
-};
+const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(Number(staffId));
 
 const submitForm = () => {
   if (!validateForm()) {
@@ -279,9 +271,10 @@ const goBack = () => {
               class="flex items-start space-x-3 rounded-lg border p-3 hover:bg-gray-50"
             >
               <Checkbox
-  :checked="form.staff_ids.includes(staff.id)"
-  @click="toggleStaff(staff.id)"
-/>
+                :id="`staff-${staff.id}`"
+                :model-value="isStaffSelected(staff.id)"
+                @update:modelValue="(checked) => setStaffSelected(staff.id, checked)"
+              />
               <label
                 :for="`staff-${staff.id}`"
                 class="flex-1 cursor-pointer"
@@ -291,6 +284,12 @@ const goBack = () => {
                 </div>
                 <div class="text-xs text-muted-foreground">
                   {{ staff.StaffEMAIL }}
+                </div>
+                <div v-if="staff.roles && staff.roles.length" class="mt-1 text-xs text-muted-foreground">
+                  Roles:
+                  <span v-for="(role, idx) in staff.roles" :key="role.id || idx">
+                    {{ role.RoleTYPE }}<span v-if="idx < staff.roles.length - 1">, </span>
+                  </span>
                 </div>
               </label>
             </div>

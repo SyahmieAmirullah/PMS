@@ -46,7 +46,7 @@ class TaskController extends Controller
         $tasks = $query->paginate((int)$perPage)->withQueryString();
 
         // Get all projects for filter dropdown
-        $projects = Project::select('ProjectID', 'ProjectNAME')
+        $projects = Project::select('id', 'ProjectNAME')
             ->orderBy('ProjectNAME')
             ->get();
 
@@ -70,7 +70,7 @@ class TaskController extends Controller
 
     public function create(Request $request)
     {
-        $projects = Project::select('ProjectID', 'ProjectNAME', 'ClientNAME')
+        $projects = Project::select('id', 'ProjectNAME', 'ClientNAME')
             ->orderBy('ProjectNAME')
             ->get();
 
@@ -88,7 +88,8 @@ class TaskController extends Controller
             'TaskNAME' => 'required|string|max:255',
             'TaskDESC' => 'nullable|string',
             'TaskDUE' => 'required|date',
-            'ProjectID' => 'required|exists:project,ProjectID',
+            'ProjectID' => 'required|exists:project,id',
+            'TaskSTATUS' => 'nullable|in:pending,in_progress,completed,cancelled',
         ]);
 
         Task::create($validated);
@@ -114,7 +115,8 @@ class TaskController extends Controller
             'TaskNAME' => 'required|string|max:255',
             'TaskDESC' => 'nullable|string',
             'TaskDUE' => 'required|date',
-            'ProjectID' => 'required|exists:projects,id',
+            'ProjectID' => 'required|exists:project,id',
+            'TaskSTATUS' => 'nullable|in:pending,in_progress,completed,cancelled',
         ]);
 
         $task = Task::findOrFail($id);
@@ -123,6 +125,16 @@ class TaskController extends Controller
         return redirect()
             ->route('task.index')
             ->with('success', 'Task updated successfully!');
+    }
+
+    public function markDone($id)
+    {
+        $task = Task::findOrFail($id);
+        $task->update(['TaskSTATUS' => 'completed']);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Task marked as done.');
     }
 
     public function destroy($id)

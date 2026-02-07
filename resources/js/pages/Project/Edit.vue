@@ -68,7 +68,7 @@ onMounted(() => {
     ClientNAME: props.project.ClientNAME || '',
     ClientPHONE: props.project.ClientPHONE || '',
     ClientEMAIL: props.project.ClientEMAIL || '',
-    staff_ids: props.project.staff?.map((s: any) => s.id) || [],
+    staff_ids: props.project.staff?.map((s: any) => Number(s.id ?? s.StaffID)) || [],
   };
 });
 
@@ -99,17 +99,23 @@ const isValidEmail = (email: string) => {
   return emailRegex.test(email);
 };
 
+const normalizeStaffId = (staff: { id?: number; StaffID?: number } | number) => {
+  if (typeof staff === 'number') return Number(staff);
+  return Number(staff.id ?? staff.StaffID);
+};
+
 const setStaffSelected = (staffId: number, checked: boolean | 'indeterminate') => {
+  const normalizedId = normalizeStaffId(staffId);
   const isChecked = checked === true;
-  const index = form.value.staff_ids.indexOf(staffId);
+  const index = form.value.staff_ids.indexOf(normalizedId);
   if (isChecked && index === -1) {
-    form.value.staff_ids.push(staffId);
+    form.value.staff_ids.push(normalizedId);
   } else if (!isChecked && index > -1) {
     form.value.staff_ids.splice(index, 1);
   }
 };
 
-const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(staffId);
+const isStaffSelected = (staffId: number) => form.value.staff_ids.includes(normalizeStaffId(staffId));
 
 const submitForm = () => {
   if (!validateForm()) {
@@ -251,16 +257,16 @@ const goBack = () => {
           <div class="space-y-2">
             <div
               v-for="staff in staffList"
-              :key="staff.id"
+              :key="staff.id ?? staff.StaffID"
               class="flex items-center space-x-3 rounded-lg border p-3 hover:bg-gray-50"
             >
               <Checkbox
-                :id="`staff-${staff.id}`"
-                :checked="isStaffSelected(staff.id)"
-                @update:checked="(checked) => setStaffSelected(staff.id, checked)"
+                :id="`staff-${staff.id ?? staff.StaffID}`"
+                :model-value="isStaffSelected(staff.id ?? staff.StaffID)"
+                @update:modelValue="(checked) => setStaffSelected(staff.id ?? staff.StaffID, checked)"
               />
               <label
-                :for="`staff-${staff.id}`"
+                :for="`staff-${staff.id ?? staff.StaffID}`"
                 class="flex-1 cursor-pointer text-sm font-medium"
               >
                 <div>{{ staff.StaffNAME }}</div>

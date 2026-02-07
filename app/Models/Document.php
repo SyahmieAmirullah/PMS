@@ -25,6 +25,10 @@ class Document extends Model
         'DocumentDATE' => 'date',
     ];
 
+    protected $appends = [
+        'document_url',
+    ];
+
     /**
      * Relationships
      */

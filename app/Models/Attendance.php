@@ -14,11 +14,14 @@ class Attendance extends Model
 
     protected $fillable = [
         'MeetingID',
+        'StaffID',
         'AttandanceSTATUS',
         'AttandanceDATE',
         'AttandanceTIME',
         'AbsentREASON',
         'AttandanceLOCATION',
+        'AttandanceLAT',
+        'AttandanceLNG',
     ];
 
     protected $casts = [
@@ -34,6 +37,11 @@ class Attendance extends Model
     public function meeting()
     {
         return $this->belongsTo(Meeting::class, 'MeetingID', 'id');
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class, 'StaffID', 'id');
     }
 
     /**

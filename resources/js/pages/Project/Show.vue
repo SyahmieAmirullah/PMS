@@ -4,7 +4,7 @@ import BaseCard from '@/components/ui/card/BaseCard.vue';
 import BaseTitle from '@/components/ui/card/BaseTitle.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 //import { useI18n } from 'vue-i18n';
 
@@ -76,12 +76,22 @@ const formatStatus = (status: string) => statusLabels[status] || status;
 // Task status color
 const getTaskStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    'Pending': 'bg-gray-100 text-gray-700',
-    'In Progress': 'bg-blue-100 text-blue-700',
-    'Completed': 'bg-green-100 text-green-700',
-    'Cancelled': 'bg-red-100 text-red-700',
+    pending: 'bg-gray-100 text-gray-700',
+    in_progress: 'bg-blue-100 text-blue-700',
+    completed: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700',
   };
   return colors[status] || 'bg-gray-100 text-gray-700';
+};
+
+const formatTaskStatus = (status: string) => {
+  const labels: Record<string, string> = {
+    pending: 'Pending',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  };
+  return labels[status] || status;
 };
 
 // Format date
@@ -103,16 +113,30 @@ const formatDateTime = (date: string) => {
   }
 };
 
+const markTaskDone = (taskId: number) => {
+  router.put(`/tasks/${taskId}/done`, {}, {
+    preserveScroll: true,
+  });
+};
+
 // Statistics
 const taskStats = computed(() => {
   const tasks = props.project.tasks || [];
   return {
     total: tasks.length,
-    completed: tasks.filter((t: any) => t.TaskSTATUS === 'Completed').length,
-    inProgress: tasks.filter((t: any) => t.TaskSTATUS === 'In Progress').length,
-    pending: tasks.filter((t: any) => t.TaskSTATUS === 'Pending').length,
+    completed: tasks.filter((t: any) => t.TaskSTATUS === 'completed').length,
+    inProgress: tasks.filter((t: any) => t.TaskSTATUS === 'in_progress').length,
+    pending: tasks.filter((t: any) => t.TaskSTATUS === 'pending').length,
   };
 });
+
+const solvedFeedbackIds = ref<Set<number>>(new Set());
+
+const isFeedbackSolved = (id: number) => solvedFeedbackIds.value.has(id);
+
+const markFeedbackSolved = (id: number) => {
+  solvedFeedbackIds.value.add(id);
+};
 </script>
 
 <template>
@@ -181,7 +205,12 @@ const taskStats = computed(() => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({{ project.tasks?.length ?? 0 }})</TabsTrigger>
           <TabsTrigger value="phases">Phases ({{ project.phases?.length ?? 0 }})</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback ({{ project.feedback?.length ?? 0 }})</TabsTrigger>
+          <TabsTrigger value="feedback">
+            Feedback
+            <span class="ml-2 inline-flex items-center justify-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+              {{ project.feedback?.length ?? 0 }}
+            </span>
+          </TabsTrigger>
           <TabsTrigger value="logs">Logs ({{ project.project_logs?.length ?? 0 }})</TabsTrigger>
         </TabsList>
 
@@ -260,14 +289,15 @@ const taskStats = computed(() => {
             </div>
 
             <Table class="border-y">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Task Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead class="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
               <TableBody>
                 <TableRow v-for="task in project.tasks" :key="task.id">
                   <TableCell class="font-medium">{{ task.TaskNAME }}</TableCell>
@@ -280,12 +310,22 @@ const taskStats = computed(() => {
                   </TableCell>
                   <TableCell>
                     <Badge :class="getTaskStatusColor(task.TaskSTATUS)">
-                      {{ task.TaskSTATUS }}
+                      {{ formatTaskStatus(task.TaskSTATUS) }}
                     </Badge>
+                  </TableCell>
+                  <TableCell class="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      :disabled="task.TaskSTATUS === 'completed'"
+                      @click="markTaskDone(task.id)"
+                    >
+                      Mark Done
+                    </Button>
                   </TableCell>
                 </TableRow>
                 <TableRow v-if="!project.tasks || project.tasks.length === 0">
-                  <TableCell colspan="4" class="text-center py-6 text-muted-foreground">
+                  <TableCell colspan="5" class="text-center py-6 text-muted-foreground">
                     No tasks found for this project
                   </TableCell>
                 </TableRow>
@@ -342,21 +382,43 @@ const taskStats = computed(() => {
               </Link>
             </div>
 
-            <div v-if="project.feedback && project.feedback.length > 0" class="space-y-4">
+            <div
+              v-if="project.feedback && project.feedback.length > 0"
+              class="space-y-3"
+            >
               <div
                 v-for="feedback in project.feedback"
                 :key="feedback.id"
-                class="rounded-lg border p-4"
+                class="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 p-4"
               >
-                <div class="flex items-start gap-3">
-                  <MessageSquare class="h-5 w-5 text-primary mt-1" />
-                  <div class="flex-1">
-                    <h4 class="font-semibold">{{ feedback.FeedbackTITLE }}</h4>
-                    <p class="mt-2 text-sm">{{ feedback.FeedbackDESC }}</p>
-                    <p class="mt-2 text-xs text-muted-foreground">
-                      {{ formatDateTime(feedback.FeedbackTIME) }}
-                    </p>
+                <div class="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700">
+                  <MessageSquare class="h-4 w-4" />
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-semibold text-red-900">{{ feedback.FeedbackTITLE }}</h4>
+                    <div class="flex items-center gap-3">
+                      <span
+                        v-if="isFeedbackSolved(feedback.id)"
+                        class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700"
+                      >
+                        Solved
+                      </span>
+                      <span class="text-xs text-red-700">
+                        {{ formatDateTime(feedback.FeedbackTIME) }}
+                      </span>
+                      <Button
+                        v-if="!isFeedbackSolved(feedback.id)"
+                        size="sm"
+                        variant="outline"
+                        class="border-red-200 text-red-700 hover:bg-red-100"
+                        @click="markFeedbackSolved(feedback.id)"
+                      >
+                        Solve
+                      </Button>
+                    </div>
                   </div>
+                  <p class="mt-2 text-sm text-red-900/80">{{ feedback.FeedbackDESC || '-' }}</p>
                 </div>
               </div>
             </div>

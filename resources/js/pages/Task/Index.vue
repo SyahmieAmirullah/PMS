@@ -127,6 +127,7 @@ const editTask = ref({
   TaskDESC: '',
   TaskDUE: '',
   ProjectID: '',
+  TaskSTATUS: 'pending',
 });
 
 const openEditDialog = (task: any) => {
@@ -136,6 +137,7 @@ const openEditDialog = (task: any) => {
     TaskDESC: task.TaskDESC ?? '',
     TaskDUE: task.TaskDUE,
     ProjectID: task.ProjectID,
+    TaskSTATUS: task.TaskSTATUS ?? 'pending',
   };
   showEditDialog.value = true;
 };
@@ -149,6 +151,7 @@ const updateTask = () => {
       TaskDESC: editTask.value.TaskDESC,
       TaskDUE: editTask.value.TaskDUE,
       ProjectID: editTask.value.ProjectID,
+      TaskSTATUS: editTask.value.TaskSTATUS,
     },
     {
       onSuccess: () => {
@@ -251,10 +254,27 @@ const isOverdue = (dateStr: string) => {
 
 // Get task status badge
 const getTaskBadge = (task: any) => {
+  const status = task.TaskSTATUS;
+  if (status === 'completed') {
+    return { text: 'Completed', class: 'bg-green-100 text-green-700 border-green-200' };
+  }
+  if (status === 'cancelled') {
+    return { text: 'Cancelled', class: 'bg-red-100 text-red-700 border-red-200' };
+  }
+  if (status === 'in_progress') {
+    return { text: 'In Progress', class: 'bg-blue-100 text-blue-700 border-blue-200' };
+  }
   if (isOverdue(task.TaskDUE)) {
     return { text: 'Overdue', class: 'bg-red-100 text-red-700 border-red-200' };
   }
-  return { text: 'Upcoming', class: 'bg-green-100 text-green-700 border-green-200' };
+  return { text: 'Pending', class: 'bg-gray-100 text-gray-700 border-gray-200' };
+};
+
+const markTaskDone = (taskId: number) => {
+  router.put(`/tasks/${taskId}/done`, {}, {
+    onSuccess: () => toast.success('Task marked as done.'),
+    onError: () => toast.error('Failed to mark task as done.'),
+  });
 };
 
 // Pagination
@@ -345,6 +365,12 @@ const endRow = computed(() => {
 const statusOptions = [
   { value: 'upcoming', label: 'Upcoming' },
   { value: 'overdue', label: 'Overdue' },
+];
+const taskStatusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ];
 const addTask = () => {
   router.get('/tasks/create');
@@ -604,6 +630,12 @@ const addTask = () => {
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      :class="task.TaskSTATUS === 'completed' ? 'text-gray-400 pointer-events-none' : ''"
+                      @click="task.TaskSTATUS === 'completed' ? null : markTaskDone(task.id)"
+                    >
+                      Mark Done
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       class="text-red-600"
                       @click="openDeleteDialog(task.id)"
                     >
@@ -751,6 +783,27 @@ const addTask = () => {
                   type="date"
                 />
               </div>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+              <Label>Status</Label>
+              <Select v-model="editTask.TaskSTATUS">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Task Status</SelectLabel>
+                    <SelectItem
+                      v-for="status in taskStatusOptions"
+                      :key="status.value"
+                      :value="status.value"
+                    >
+                      {{ status.label }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

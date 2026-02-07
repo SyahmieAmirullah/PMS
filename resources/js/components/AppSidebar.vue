@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Apple,FolderKanban, MapPinMinus } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Apple,FolderKanban, MapPinMinus, AlignEndHorizontal, ArchiveRestore, Presentation } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -37,6 +37,21 @@ const mainNavItems: NavItem[] = [
         title: 'Task',
         href: '/tasks',
         icon : MapPinMinus,
+    },
+    {
+        title: 'Phase',
+        href: '/phases',
+        icon : AlignEndHorizontal,
+    },
+    {
+        title: 'Feedback',
+        href: '/feedback',
+        icon : ArchiveRestore ,
+    },
+    {
+        title: 'Meeting',
+        href: '/meetings',
+        icon : Presentation  ,
     }
 ];
 

@@ -36,6 +36,6 @@ class Phase extends Model
     // Phase has many documents
     public function documents()
     {
-        return $this->hasMany(Document::class, 'PhaseID', 'PhaseID');
+        return $this->hasMany(Document::class, 'PhaseID', 'id');
     }
 }

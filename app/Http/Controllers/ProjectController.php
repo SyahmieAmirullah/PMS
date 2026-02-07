@@ -64,6 +64,7 @@ class ProjectController extends Controller
     public function create()
     {
         $staffList = Staff::select('id', 'StaffNAME', 'StaffEMAIL')
+            ->with(['roles'])
             ->orderBy('StaffNAME')
             ->get();
 
