@@ -1,149 +1,252 @@
-<script setup>
-import { useForm, Head, Link } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-vue-next';
+<script setup lang="ts">
+import Button from '@/components/ui/button/Button.vue';
+import BaseCard from '@/components/ui/card/BaseCard.vue';
+import BaseTitle from '@/components/ui/card/BaseTitle.vue';
+import Input from '@/components/ui/input/Input.vue';
+import Label from '@/components/ui/label/Label.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import Textarea from '@/components/ui/textarea/Textarea.vue';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps({
-  staff: Object,
+  staff: { type: Object, required: true },
 });
 
-const form = useForm({
-  StaffNAME: props.staff.StaffNAME,
-  StaffEMAIL: props.staff.StaffEMAIL,
+const breadcrumbs: BreadcrumbItem[] = [
+  { title: 'Staff', href: '/staff' },
+  { title: 'Edit Staff', href: `/staff/${props.staff.id}/edit` }
+];
+
+const form = ref({
+  StaffNAME: props.staff.StaffNAME || '',
   StaffPHONE: props.staff.StaffPHONE || '',
+  StaffEMAIL: props.staff.StaffEMAIL || '',
   StaffPASSWORD: '',
-  StaffPASSWORD_confirmation: '',
+  roles: (props.staff.roles || []).map((r: any) => ({
+    RoleTYPE: r.RoleTYPE || '',
+    RoleDESC: r.RoleDESC || '',
+    RolePRO: r.RolePRO || '',
+  })) as Array<{ RoleTYPE: string; RoleDESC: string; RolePRO: string }>,
 });
 
-const submit = () => {
-  form.put(route('staff.update', props.staff.StaffID), {
-    preserveScroll: true,
+if (form.value.roles.length === 0) {
+  form.value.roles.push({ RoleTYPE: '', RoleDESC: '', RolePRO: '' });
+}
+
+const errors = ref<Record<string, string>>({});
+const isSubmitting = ref(false);
+
+const validateForm = () => {
+  errors.value = {};
+  let isValid = true;
+
+  if (!form.value.StaffNAME.trim()) {
+    errors.value.StaffNAME = 'Staff name is required';
+    isValid = false;
+  }
+
+  if (!form.value.StaffEMAIL.trim()) {
+    errors.value.StaffEMAIL = 'Email is required';
+    isValid = false;
+  } else if (!isValidEmail(form.value.StaffEMAIL)) {
+    errors.value.StaffEMAIL = 'Please enter a valid email address';
+    isValid = false;
+  }
+
+  if (form.value.StaffPASSWORD && form.value.StaffPASSWORD.length < 6) {
+    errors.value.StaffPASSWORD = 'Password must be at least 6 characters';
+    isValid = false;
+  }
+
+  return isValid;
+};
+
+const isValidEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const addRole = () => {
+  form.value.roles.push({ RoleTYPE: '', RoleDESC: '', RolePRO: '' });
+};
+
+const removeRole = (index: number) => {
+  if (form.value.roles.length > 1) {
+    form.value.roles.splice(index, 1);
+  } else {
+    toast.error('At least one role entry is required');
+  }
+};
+
+const submitForm = () => {
+  if (!validateForm()) {
+    toast.error('Please check your inputs');
+    return;
+  }
+
+  isSubmitting.value = true;
+
+  router.put(`/staff/${props.staff.id}`, form.value, {
+    onSuccess: () => {
+      toast.success('Staff member updated successfully!');
+      isSubmitting.value = false;
+    },
+    onError: (err) => {
+      console.log(err);
+      toast.error('Failed to update staff member');
+      isSubmitting.value = false;
+    },
   });
+};
+
+const goBack = () => {
+  router.visit('/staff');
 };
 </script>
 
 <template>
   <Head title="Edit Staff" />
-
-  <AuthenticatedLayout>
-    <template #header>
-      <div class="flex items-center gap-4">
-        <Link :href="route('staff.index')">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft class="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </Link>
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-          Edit Staff Member
-        </h2>
+  <AppLayout :breadcrumbs="breadcrumbs">
+    <BaseCard>
+      <div class="mb-6 flex items-center justify-between">
+        <BaseTitle size="2xl">Edit Staff Member</BaseTitle>
+        <Button variant="outline" @click="goBack" class="flex items-center gap-2">
+          <ArrowLeft class="h-4 w-4" />
+          Back to Staff
+        </Button>
       </div>
-    </template>
 
-    <div class="py-12">
-      <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Staff Information</CardTitle>
-            <CardDescription>Update staff member details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form @submit.prevent="submit" class="space-y-6">
-              <!-- Name -->
-              <div class="space-y-2">
-                <Label for="name">Full Name *</Label>
+      <form @submit.prevent="submitForm" class="space-y-6">
+        <!-- Personal Information Section -->
+        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-lg font-semibold">Personal Information</h3>
+
+          <div class="space-y-4">
+            <div class="flex flex-col space-y-1">
+              <Label>Full Name <span class="text-red-500">*</span></Label>
+              <Input
+                v-model="form.StaffNAME"
+                placeholder="Enter full name"
+                :class="errors.StaffNAME ? 'border-red-500' : ''"
+              />
+              <span v-if="errors.StaffNAME" class="text-xs text-red-500">
+                {{ errors.StaffNAME }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col space-y-1">
+                <Label>Phone Number</Label>
                 <Input
-                  id="name"
-                  v-model="form.StaffNAME"
-                  type="text"
-                  required
-                  autofocus
-                  :class="{ 'border-red-500': form.errors.StaffNAME }"
+                  v-model="form.StaffPHONE"
+                  placeholder="Enter phone number"
                 />
-                <p v-if="form.errors.StaffNAME" class="text-sm text-red-500">
-                  {{ form.errors.StaffNAME }}
-                </p>
               </div>
 
-              <!-- Email -->
-              <div class="space-y-2">
-                <Label for="email">Email Address *</Label>
+              <div class="flex flex-col space-y-1">
+                <Label>Email <span class="text-red-500">*</span></Label>
                 <Input
-                  id="email"
                   v-model="form.StaffEMAIL"
                   type="email"
-                  required
-                  :class="{ 'border-red-500': form.errors.StaffEMAIL }"
+                  placeholder="Enter email address"
+                  :class="errors.StaffEMAIL ? 'border-red-500' : ''"
                 />
-                <p v-if="form.errors.StaffEMAIL" class="text-sm text-red-500">
-                  {{ form.errors.StaffEMAIL }}
-                </p>
+                <span v-if="errors.StaffEMAIL" class="text-xs text-red-500">
+                  {{ errors.StaffEMAIL }}
+                </span>
               </div>
+            </div>
 
-              <!-- Phone -->
-              <div class="space-y-2">
-                <Label for="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  v-model="form.StaffPHONE"
-                  type="tel"
-                  :class="{ 'border-red-500': form.errors.StaffPHONE }"
-                />
-                <p v-if="form.errors.StaffPHONE" class="text-sm text-red-500">
-                  {{ form.errors.StaffPHONE }}
-                </p>
-              </div>
+            <div class="flex flex-col space-y-1">
+              <Label>Password</Label>
+              <Input
+                v-model="form.StaffPASSWORD"
+                type="password"
+                placeholder="Leave blank to keep current password"
+                :class="errors.StaffPASSWORD ? 'border-red-500' : ''"
+              />
+              <span v-if="errors.StaffPASSWORD" class="text-xs text-red-500">
+                {{ errors.StaffPASSWORD }}
+              </span>
+            </div>
+          </div>
+        </div>
 
-              <!-- Divider -->
-              <div class="border-t pt-6">
-                <p class="text-sm text-gray-600 mb-4">
-                  Leave password fields empty to keep current password
-                </p>
-              </div>
+        <!-- Roles Section -->
+        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Roles & Responsibilities</h3>
+            <Button type="button" size="sm" variant="outline" @click="addRole">
+              <Plus class="h-4 w-4 mr-2" />
+              Add Role
+            </Button>
+          </div>
 
-              <!-- Password -->
-              <div class="space-y-2">
-                <Label for="password">New Password</Label>
-                <Input
-                  id="password"
-                  v-model="form.StaffPASSWORD"
-                  type="password"
-                  :class="{ 'border-red-500': form.errors.StaffPASSWORD }"
-                />
-                <p v-if="form.errors.StaffPASSWORD" class="text-sm text-red-500">
-                  {{ form.errors.StaffPASSWORD }}
-                </p>
-              </div>
-
-              <!-- Confirm Password -->
-              <div class="space-y-2">
-                <Label for="password_confirmation">Confirm New Password</Label>
-                <Input
-                  id="password_confirmation"
-                  v-model="form.StaffPASSWORD_confirmation"
-                  type="password"
-                />
-              </div>
-
-              <!-- Actions -->
-              <div class="flex justify-end gap-4 pt-4">
-                <Link :href="route('staff.index')">
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
-                <Button type="submit" :disabled="form.processing">
-                  {{ form.processing ? 'Updating...' : 'Update Staff' }}
+          <div class="space-y-4">
+            <div
+              v-for="(role, index) in form.roles"
+              :key="index"
+              class="rounded-lg border p-4 bg-gray-50"
+            >
+              <div class="mb-3 flex items-center justify-between">
+                <h4 class="text-sm font-medium">Role {{ index + 1 }}</h4>
+                <Button
+                  v-if="form.roles.length > 1"
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  @click="removeRole(index)"
+                  class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 class="h-4 w-4" />
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  </AuthenticatedLayout>
+
+              <div class="space-y-3">
+                <div class="flex flex-col space-y-1">
+                  <Label>Role Type</Label>
+                  <Input
+                    v-model="role.RoleTYPE"
+                    placeholder="e.g., Developer, Manager, Designer"
+                  />
+                </div>
+
+                <div class="flex flex-col space-y-1">
+                  <Label>Role Description</Label>
+                  <Textarea
+                    v-model="role.RoleDESC"
+                    placeholder="Describe the role and responsibilities"
+                    rows="2"
+                  />
+                </div>
+
+                <div class="flex flex-col space-y-1">
+                  <Label>Professional Level/Status</Label>
+                  <Input
+                    v-model="role.RolePRO"
+                    placeholder="e.g., Senior, Junior, Lead"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3">
+          <Button type="button" variant="outline" @click="goBack">
+            Cancel
+          </Button>
+          <Button type="submit" :disabled="isSubmitting" class="flex items-center gap-2">
+            <Save class="h-4 w-4" />
+            {{ isSubmitting ? 'Updating...' : 'Update Staff Member' }}
+          </Button>
+        </div>
+      </form>
+    </BaseCard>
+  </AppLayout>
 </template>

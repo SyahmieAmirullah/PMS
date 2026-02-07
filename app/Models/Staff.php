@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Staff extends Model
+class Staff extends Authenticatable
 {
     use HasFactory, SoftDeletes;
 
@@ -22,6 +22,13 @@ class Staff extends Model
     protected $hidden = [
         'StaffPASSWORD',
     ];
+
+    protected $rememberTokenName = 'remember_token';
+
+    public function getAuthPassword()
+    {
+        return $this->StaffPASSWORD;
+    }
 
     public function roles()
     {
@@ -43,6 +50,16 @@ class Staff extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class, 'StaffID', 'id');
+    }
+
+    public function hasRole(string $roleType): bool
+    {
+        return $this->roles()->where('RoleTYPE', $roleType)->exists();
+    }
+
+    public function roleTypes()
+    {
+        return $this->roles()->pluck('RoleTYPE');
     }
     
     // Remove attendances relationship - it doesn't exist in the ERD
