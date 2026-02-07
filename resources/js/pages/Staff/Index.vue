@@ -66,6 +66,10 @@ import { Badge } from '@/components/ui/badge';
 
 //const { t } = useI18n();
 const page = usePage();
+const isAdmin = computed(() => {
+  const roles = (page.props.auth as any)?.roles ?? [];
+  return roles.includes('Admin');
+});
 
 watchEffect(() => {
   const s = (page.props.flash as any)?.success;
@@ -411,7 +415,7 @@ const addStaff=() => {
               <TableHead>Roles</TableHead>
               <TableHead>Projects</TableHead>
               <TableHead>Attendance</TableHead>
-              <TableHead v-if="page.props.can">Actions</TableHead>
+              <TableHead v-if="isAdmin">Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -470,7 +474,7 @@ const addStaff=() => {
                   <span class="text-sm font-medium">{{ staff.attendances_count ?? 0 }}</span>
                 </div>
               </TableCell>
-              <TableCell v-if="page.props.can" class="align-middle">
+              <TableCell v-if="isAdmin" class="align-middle">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline">...</Button>
@@ -487,6 +491,11 @@ const addStaff=() => {
                     <Link :href="`/staff/${staff.id}/edit`" class="no-underline">
                       <DropdownMenuItem>
                         Edit
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link :href="`/staff/${staff.id}/edit`" class="no-underline">
+                      <DropdownMenuItem>
+                        Edit Roles
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuItem
