@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Feedback;
 use App\Models\Project;
+use App\Services\ProjectLogService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -66,7 +67,15 @@ class FeedbackController extends Controller
             'FeedbackTIME' => 'required|date',
         ]);
 
-        Feedback::create($validated);
+        $feedback = Feedback::create($validated);
+
+        ProjectLogService::log(
+            $feedback->ProjectID,
+            'Feedback added',
+            'issue',
+            $feedback->FeedbackTITLE,
+            optional($request->user('staff'))->id
+        );
 
         return redirect()
             ->route('feedback.index')

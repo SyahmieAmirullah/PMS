@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Phase;
 use App\Models\Project;
 use App\Models\Document;
+use App\Services\ProjectLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -78,17 +79,29 @@ class PhaseController extends Controller
             'PhaseORDER' => $validated['PhaseORDER'] ?? 0,
         ]);
 
+        ProjectLogService::log(
+            $phase->ProjectID,
+            'Phase created',
+            'update',
+            "Phase: {$phase->PhaseNAME}",
+            optional($request->user('staff'))->id
+        );
+
         if (!empty($validated['documents'])) {
+            $versionMap = $this->getNextDocumentVersions($phase->id, $validated['documents']);
             foreach ($validated['documents'] as $file) {
                 $path = $file->store("documents/phases/{$phase->id}", 'public');
+                $originalName = $file->getClientOriginalName();
 
                 Document::create([
                     'PhaseID' => $phase->id,
-                    'DocumentNAME' => $file->getClientOriginalName(),
+                    'DocumentNAME' => $originalName,
                     'DocumentDATE' => now()->toDateString(),
-                    'DocumentVERSION' => '1.0',
+                    'DocumentVERSION' => $versionMap[$originalName],
                     'DocumentPATH' => $path,
                 ]);
+
+                $versionMap[$originalName] = $this->incrementVersion($versionMap[$originalName]);
             }
         }
 
@@ -136,6 +149,7 @@ class PhaseController extends Controller
         ]);
 
         $phase = Phase::findOrFail($id);
+        $original = $phase->getOriginal();
 
         $phase->update([
             'ProjectID' => $validated['ProjectID'] ?? $phase->ProjectID,
@@ -144,6 +158,24 @@ class PhaseController extends Controller
             'PhaseUPDATE' => array_key_exists('PhaseUPDATE', $validated) ? $validated['PhaseUPDATE'] : $phase->PhaseUPDATE,
             'PhaseORDER' => array_key_exists('PhaseORDER', $validated) ? $validated['PhaseORDER'] : $phase->PhaseORDER,
         ]);
+
+        $changes = [];
+        foreach (['PhaseNAME', 'PhaseDESC', 'PhaseUPDATE', 'PhaseORDER'] as $field) {
+            $oldValue = $original[$field] ?? null;
+            $newValue = $phase->$field ?? null;
+            if ((string) $oldValue !== (string) $newValue) {
+                $changes[] = "{$field}: {$oldValue} -> {$newValue}";
+            }
+        }
+        if (!empty($changes)) {
+            ProjectLogService::log(
+                $phase->ProjectID,
+                'Phase updated',
+                'update',
+                implode('; ', $changes),
+                optional($request->user('staff'))->id
+            );
+        }
 
         if (!empty($validated['delete_document_ids'])) {
             $documents = Document::whereIn('id', $validated['delete_document_ids'])
@@ -159,16 +191,20 @@ class PhaseController extends Controller
         }
 
         if (!empty($validated['documents'])) {
+            $versionMap = $this->getNextDocumentVersions($phase->id, $validated['documents']);
             foreach ($validated['documents'] as $file) {
                 $path = $file->store("documents/phases/{$phase->id}", 'public');
+                $originalName = $file->getClientOriginalName();
 
                 Document::create([
                     'PhaseID' => $phase->id,
-                    'DocumentNAME' => $file->getClientOriginalName(),
+                    'DocumentNAME' => $originalName,
                     'DocumentDATE' => now()->toDateString(),
-                    'DocumentVERSION' => '1.0',
+                    'DocumentVERSION' => $versionMap[$originalName],
                     'DocumentPATH' => $path,
                 ]);
+
+                $versionMap[$originalName] = $this->incrementVersion($versionMap[$originalName]);
             }
         }
 
@@ -192,5 +228,55 @@ class PhaseController extends Controller
         return redirect()
             ->route('phases.index')
             ->with('success', 'Phase deleted successfully!');
+    }
+
+    private function getNextDocumentVersions(int $phaseId, array $files): array
+    {
+        $names = collect($files)->map(function ($file) {
+            return $file->getClientOriginalName();
+        })->unique()->values();
+
+        $existing = Document::where('PhaseID', $phaseId)
+            ->whereIn('DocumentNAME', $names)
+            ->get()
+            ->groupBy('DocumentNAME');
+
+        $versionMap = [];
+        foreach ($names as $name) {
+            $latestVersion = null;
+            if (isset($existing[$name])) {
+                $latestVersion = $existing[$name]
+                    ->pluck('DocumentVERSION')
+                    ->filter()
+                    ->map(function ($version) {
+                        return $this->normalizeVersion($version);
+                    })
+                    ->max();
+            }
+
+            $versionMap[$name] = $latestVersion ? $this->incrementVersion($latestVersion) : '1.0';
+        }
+
+        return $versionMap;
+    }
+
+    private function normalizeVersion($version): string
+    {
+        $version = (string) $version;
+        if (preg_match('/^(\d+)/', $version, $matches)) {
+            return $matches[1] . '.0';
+        }
+
+        return '1.0';
+    }
+
+    private function incrementVersion(string $version): string
+    {
+        $major = 1;
+        if (preg_match('/^(\d+)/', $version, $matches)) {
+            $major = (int) $matches[1];
+        }
+
+        return ($major + 1) . '.0';
     }
 }

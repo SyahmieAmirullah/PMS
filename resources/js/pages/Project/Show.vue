@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
@@ -113,6 +114,13 @@ const formatDateTime = (date: string) => {
   }
 };
 
+const formatLegacyDateTime = (date: string, time: string) => {
+  if (!date && !time) return '-';
+  if (!date) return time || '-';
+  if (!time) return formatDate(date);
+  return `${formatDate(date)} ${time}`;
+};
+
 const markTaskDone = (taskId: number) => {
   router.put(`/tasks/${taskId}/done`, {}, {
     preserveScroll: true,
@@ -136,6 +144,11 @@ const isFeedbackSolved = (id: number) => solvedFeedbackIds.value.has(id);
 
 const markFeedbackSolved = (id: number) => {
   solvedFeedbackIds.value.add(id);
+};
+
+const getAttachmentUrl = (path: string) => {
+  if (!path) return '#';
+  return `/storage/${path}`;
 };
 </script>
 
@@ -437,22 +450,41 @@ const markFeedbackSolved = (id: number) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Time Spent</TableHead>
-                  <TableHead>Phase (Before)</TableHead>
-                  <TableHead>Phase (Current)</TableHead>
-                  <TableHead>Change Reason</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Staff</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Attachments</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow v-for="log in project.project_logs" :key="log.id">
-                  <TableCell>{{ formatDate(log.ProjectDATE) }}</TableCell>
-                  <TableCell>{{ log.ProjectTIME || '-' }}</TableCell>
-                  <TableCell>{{ log.PhaseBEFORE || '-' }}</TableCell>
-                  <TableCell>{{ log.PhaseCURRENT || '-' }}</TableCell>
-                  <TableCell>{{ log.ChangeREASON || '-' }}</TableCell>
+                  <TableCell>
+                    {{ log.LogDATE ? formatDateTime(log.LogDATE) : formatLegacyDateTime(log.ProjectDATE, log.ProjectTIME) }}
+                  </TableCell>
+                  <TableCell>{{ log.LogTITLE || 'Activity Log' }}</TableCell>
+                  <TableCell>{{ log.LogTYPE || 'update' }}</TableCell>
+                  <TableCell>{{ log.staff?.StaffNAME || '-' }}</TableCell>
+                  <TableCell>
+                    {{ log.LogDESC || log.ChangeREASON || '-' }}
+                  </TableCell>
+                  <TableCell>
+                    <div v-if="log.LogATTACHMENTS?.length" class="flex flex-col gap-1">
+                      <a
+                        v-for="(attachment, idx) in log.LogATTACHMENTS"
+                        :key="`${log.id}-att-${idx}`"
+                        :href="getAttachmentUrl(attachment.path)"
+                        target="_blank"
+                        class="text-xs text-blue-600 hover:underline"
+                      >
+                        {{ attachment.name }}
+                      </a>
+                    </div>
+                    <span v-else class="text-xs text-muted-foreground">-</span>
+                  </TableCell>
                 </TableRow>
                 <TableRow v-if="!project.project_logs || project.project_logs.length === 0">
-                  <TableCell colspan="5" class="text-center py-6 text-muted-foreground">
+                  <TableCell colspan="6" class="text-center py-6 text-muted-foreground">
                     No activity logs recorded
                   </TableCell>
                 </TableRow>

@@ -19,11 +19,19 @@ class ProjectLog extends Model
         'PhaseBEFORE',
         'PhaseCURRENT',
         'ChangeREASON',
+        'LogTITLE',
+        'LogDESC',
+        'LogTYPE',
+        'LogDATE',
+        'StaffID',
+        'LogATTACHMENTS',
     ];
 
     protected $casts = [
         'ProjectDATE' => 'date',
         'ProjectTIME' => 'datetime:H:i',
+        'LogDATE' => 'datetime',
+        'LogATTACHMENTS' => 'array',
     ];
 
     /**
@@ -34,6 +42,11 @@ class ProjectLog extends Model
     public function project()
     {
         return $this->belongsTo(Project::class, 'ProjectID', 'id');
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class, 'StaffID', 'id');
     }
 
     /**

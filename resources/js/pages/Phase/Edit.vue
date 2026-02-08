@@ -65,9 +65,14 @@ const toggleDelete = (docId: number) => {
 };
 
 const submitForm = () => {
-  form.put(`/phases/${props.phase.id}`, {
-    forceFormData: true,
-  });
+  form
+    .transform((data) => ({
+      ...data,
+      _method: 'put',
+    }))
+    .post(`/phases/${props.phase.id}`, {
+      forceFormData: true,
+    });
 };
 
 const goBack = () => {

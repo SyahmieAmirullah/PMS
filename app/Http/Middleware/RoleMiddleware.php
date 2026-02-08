@@ -9,11 +9,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string $roles): Response
     {
         $staff = Auth::guard('staff')->user();
 
-        if (!$staff || !$staff->hasRole($role)) {
+        $roleList = array_filter(array_map('trim', explode('|', $roles)));
+        $hasAnyRole = false;
+        foreach ($roleList as $role) {
+            if ($staff && $staff->hasRole($role)) {
+                $hasAnyRole = true;
+                break;
+            }
+        }
+
+        if (!$hasAnyRole) {
             abort(403, 'Forbidden');
         }
 

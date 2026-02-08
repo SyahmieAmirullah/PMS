@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\Project;
+use App\Services\ProjectLogService;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -92,7 +93,15 @@ class TaskController extends Controller
             'TaskSTATUS' => 'nullable|in:pending,in_progress,completed,cancelled',
         ]);
 
-        Task::create($validated);
+        $task = Task::create($validated);
+
+        ProjectLogService::log(
+            $task->ProjectID,
+            'Task created',
+            'update',
+            "Task: {$task->TaskNAME}",
+            optional($request->user('staff'))->id
+        );
 
         return redirect()
             ->route('task.index')
@@ -120,7 +129,26 @@ class TaskController extends Controller
         ]);
 
         $task = Task::findOrFail($id);
+        $original = $task->getOriginal();
         $task->update($validated);
+
+        $changes = [];
+        foreach (['TaskNAME', 'TaskDESC', 'TaskDUE', 'TaskSTATUS'] as $field) {
+            $oldValue = $original[$field] ?? null;
+            $newValue = $task->$field ?? null;
+            if ((string) $oldValue !== (string) $newValue) {
+                $changes[] = "{$field}: {$oldValue} -> {$newValue}";
+            }
+        }
+        if (!empty($changes)) {
+            ProjectLogService::log(
+                $task->ProjectID,
+                'Task updated',
+                'update',
+                implode('; ', $changes),
+                optional($request->user('staff'))->id
+            );
+        }
 
         return redirect()
             ->route('task.index')
@@ -131,6 +159,14 @@ class TaskController extends Controller
     {
         $task = Task::findOrFail($id);
         $task->update(['TaskSTATUS' => 'completed']);
+
+        ProjectLogService::log(
+            $task->ProjectID,
+            'Task marked done',
+            'update',
+            "Task: {$task->TaskNAME}",
+            optional($request->user('staff'))->id
+        );
 
         return redirect()
             ->back()

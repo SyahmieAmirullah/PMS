@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Staff;
 use App\Models\StaffProject;
+use App\Services\ProjectLogService;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -118,6 +119,14 @@ class ProjectController extends Controller
             'ClientEMAIL' => $validated['ClientEMAIL'],
         ]);
 
+        ProjectLogService::log(
+            $project->id,
+            'Project created',
+            'update',
+            "Status: {$project->ProjectSTATUS}",
+            optional($request->user('staff'))->id
+        );
+
         // Attach staff to project with dates
         if (!empty($validated['staff_ids'])) {
             $staffIds = array_map('intval', $validated['staff_ids']);
@@ -132,6 +141,14 @@ class ProjectController extends Controller
             }
             
             $project->staff()->attach($pivotData);
+
+            ProjectLogService::log(
+                $project->id,
+                'Staff assigned to project',
+                'update',
+                'Assigned staff IDs: ' . implode(', ', $staffIds),
+                optional($request->user('staff'))->id
+            );
         }
 
         return redirect()
@@ -153,7 +170,10 @@ class ProjectController extends Controller
                 $query->orderBy('FeedbackTIME', 'desc');
             },
             'projectLogs' => function($query) {
-                $query->orderBy('ProjectDATE', 'desc');
+                $query->orderBy('LogDATE', 'desc')
+                    ->orderBy('ProjectDATE', 'desc')
+                    ->orderBy('ProjectTIME', 'desc')
+                    ->with('staff');
             }
         ])
         ->withCount(['tasks', 'phases', 'feedback'])
@@ -215,6 +235,8 @@ class ProjectController extends Controller
         ]);
 
         $project = Project::findOrFail($id);
+        $original = $project->getOriginal();
+        $existingStaffIds = $project->staff()->pluck('staff.id')->all();
 
         $project->update([
             'ProjectNAME' => $validated['ProjectNAME'],
@@ -224,6 +246,24 @@ class ProjectController extends Controller
             'ClientPHONE' => $validated['ClientPHONE'],
             'ClientEMAIL' => $validated['ClientEMAIL'],
         ]);
+
+        $changes = [];
+        foreach (['ProjectNAME', 'ProjectDESC', 'ProjectSTATUS', 'ClientNAME', 'ClientPHONE', 'ClientEMAIL'] as $field) {
+            $oldValue = $original[$field] ?? null;
+            $newValue = $validated[$field] ?? null;
+            if ((string) $oldValue !== (string) $newValue) {
+                $changes[] = "{$field}: {$oldValue} -> {$newValue}";
+            }
+        }
+        if (!empty($changes)) {
+            ProjectLogService::log(
+                $project->id,
+                'Project updated',
+                'update',
+                implode('; ', $changes),
+                optional($request->user('staff'))->id
+            );
+        }
 
         // Sync staff with dates
         if (isset($validated['staff_ids'])) {
@@ -239,9 +279,39 @@ class ProjectController extends Controller
             }
             
             $project->staff()->sync($pivotData);
+
+            $added = array_values(array_diff($staffIds, $existingStaffIds));
+            $removed = array_values(array_diff($existingStaffIds, $staffIds));
+            if (!empty($added) || !empty($removed)) {
+                $parts = [];
+                if (!empty($added)) {
+                    $parts[] = 'Added staff IDs: ' . implode(', ', $added);
+                }
+                if (!empty($removed)) {
+                    $parts[] = 'Removed staff IDs: ' . implode(', ', $removed);
+                }
+
+                ProjectLogService::log(
+                    $project->id,
+                    'Staff assignment updated',
+                    'update',
+                    implode('; ', $parts),
+                    optional($request->user('staff'))->id
+                );
+            }
         } else {
             // If no staff selected, detach all
             $project->staff()->sync([]);
+
+            if (!empty($existingStaffIds)) {
+                ProjectLogService::log(
+                    $project->id,
+                    'Staff assignment cleared',
+                    'update',
+                    'Removed staff IDs: ' . implode(', ', $existingStaffIds),
+                    optional($request->user('staff'))->id
+                );
+            }
         }
 
         return redirect()

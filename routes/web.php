@@ -28,12 +28,20 @@ Route::middleware('auth:web,staff')->group(function () {
     Route::get('dashboard', \App\Http\Controllers\DashboardController::class)->name('dashboard');
 
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-    Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
-    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/create', [ProjectController::class, 'create'])
+        ->middleware('role:Admin|Project Manager')
+        ->name('projects.create');
+    Route::post('/projects', [ProjectController::class, 'store'])
+        ->middleware('role:Admin|Project Manager')
+        ->name('projects.store');
     Route::get('/projects/{id}', [ProjectController::class, 'show'])->name('projects.show');
-    Route::put('/projects/{id}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::put('/projects/{id}', [ProjectController::class, 'update'])
+        ->middleware('role:Admin|Project Manager')
+        ->name('projects.update');
     Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->name('projects.destroy');
-    Route::get('/projects/{id}/edit', [ProjectController::class, 'edit'])->name('project.edit');
+    Route::get('/projects/{id}/edit', [ProjectController::class, 'edit'])
+        ->middleware('role:Admin|Project Manager')
+        ->name('project.edit');
 
     Route::get('/phases', [PhaseController::class, 'index'])->name('phases.index');
     Route::get('/phases/create', [PhaseController::class, 'create'])->name('phases.create');

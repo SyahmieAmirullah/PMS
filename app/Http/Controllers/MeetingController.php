@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Meeting;
 use App\Models\Project;
+use App\Services\ProjectLogService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -77,6 +78,14 @@ class MeetingController extends Controller
         ]);
 
         $meeting = Meeting::create($validated);
+
+        ProjectLogService::log(
+            $meeting->ProjectID,
+            'Meeting created',
+            'update',
+            "Meeting: {$meeting->MeetingTITLE}",
+            optional($request->user('staff'))->id
+        );
 
         $project = Project::with('staff')->find($validated['ProjectID']);
         if ($project) {
@@ -167,6 +176,7 @@ class MeetingController extends Controller
         ]);
 
         $meeting = Meeting::findOrFail($id);
+        $original = $meeting->getOriginal();
         $meeting->update([
             'ProjectID' => $validated['ProjectID'],
             'MeetingTITLE' => $validated['MeetingTITLE'],
@@ -175,6 +185,24 @@ class MeetingController extends Controller
             'MeetingTIME' => $validated['MeetingTIME'],
             'MeetingLINK' => $validated['MeetingLINK'] ?? null,
         ]);
+
+        $changes = [];
+        foreach (['MeetingTITLE', 'MeetingOBJECTIVE', 'MeetingDATE', 'MeetingTIME', 'MeetingLINK'] as $field) {
+            $oldValue = $original[$field] ?? null;
+            $newValue = $meeting->$field ?? null;
+            if ((string) $oldValue !== (string) $newValue) {
+                $changes[] = "{$field}: {$oldValue} -> {$newValue}";
+            }
+        }
+        if (!empty($changes)) {
+            ProjectLogService::log(
+                $meeting->ProjectID,
+                'Meeting updated',
+                'update',
+                implode('; ', $changes),
+                optional($request->user('staff'))->id
+            );
+        }
 
         if (!empty($validated['attendances'])) {
             foreach ($validated['attendances'] as $attendanceData) {
