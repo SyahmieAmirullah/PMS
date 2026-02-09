@@ -16,6 +16,7 @@ class Task extends Model
         'TaskDESC',
         'TaskDUE',
         'ProjectID',
+        'StaffID',
         'TaskSTATUS',
     ];
 
@@ -28,6 +29,11 @@ class Task extends Model
     public function project()
     {
         return $this->belongsTo(Project::class, 'ProjectID', 'id');
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class, 'StaffID', 'id');
     }
 
     // Scopes for filtering

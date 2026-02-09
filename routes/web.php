@@ -61,6 +61,8 @@ Route::middleware('auth:web,staff')->group(function () {
     Route::get('/meetings/create', [MeetingController::class, 'create'])->name('meetings.create');
     Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.store');
     Route::get('/meetings/{id}', [MeetingController::class, 'show'])->name('meetings.show');
+    Route::post('/meetings/{id}/attendance/self', [MeetingController::class, 'updateSelfAttendance'])
+        ->name('meetings.attendance.self');
     Route::get('/meetings/{id}/edit', [MeetingController::class, 'edit'])->name('meetings.edit');
     Route::put('/meetings/{id}', [MeetingController::class, 'update'])->name('meetings.update');
     Route::delete('/meetings/{id}', [MeetingController::class, 'destroy'])->name('meetings.destroy');

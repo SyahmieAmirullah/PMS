@@ -6,8 +6,9 @@ import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { formatDate } from '@/lib/date';
 
 import {
   Select,
@@ -37,6 +38,10 @@ const props = defineProps({
   projects: { type: Object },
   stats: { type: Object },
 });
+
+const page = usePage();
+const auth = computed(() => (page.props.auth as any) || {});
+const isStaff = computed(() => auth.value.guard === 'staff');
 
 const filters = ref({
   MeetingTITLE: '',
@@ -82,6 +87,28 @@ const goCreate = () => {
 };
 
 const paginatedMeetings = computed(() => props.meetings?.data ?? []);
+
+const statusClass = (status: string) => {
+  const map: Record<string, string> = {
+    present: 'bg-green-100 text-green-700 border-green-200',
+    absent: 'bg-red-100 text-red-700 border-red-200',
+    late: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    excused: 'bg-blue-100 text-blue-700 border-blue-200',
+    pending: 'bg-gray-100 text-gray-700 border-gray-200',
+  };
+  return map[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+const statusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    present: 'Present',
+    absent: 'Absent',
+    late: 'Late',
+    excused: 'Excused',
+    pending: 'Pending',
+  };
+  return map[status] || status;
+};
 </script>
 
 <template>
@@ -164,6 +191,7 @@ const paginatedMeetings = computed(() => props.meetings?.data ?? []);
               <TableHead>Time</TableHead>
               <TableHead>Link</TableHead>
               <TableHead>Attendance</TableHead>
+              <TableHead>My Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -172,7 +200,7 @@ const paginatedMeetings = computed(() => props.meetings?.data ?? []);
               <TableCell>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</TableCell>
               <TableCell class="font-medium">{{ meeting.MeetingTITLE }}</TableCell>
               <TableCell>{{ meeting.project?.ProjectNAME ?? '-' }}</TableCell>
-              <TableCell>{{ meeting.MeetingDATE }}</TableCell>
+              <TableCell>{{ formatDate(meeting.MeetingDATE) }}</TableCell>
               <TableCell>{{ meeting.MeetingTIME }}</TableCell>
               <TableCell>
                 <a
@@ -186,6 +214,14 @@ const paginatedMeetings = computed(() => props.meetings?.data ?? []);
                 <span v-else>-</span>
               </TableCell>
               <TableCell>{{ meeting.attendances_count ?? 0 }}</TableCell>
+              <TableCell>
+                <span v-if="isStaff && meeting.attendances && meeting.attendances.length"
+                  :class="`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass(meeting.attendances[0].AttandanceSTATUS)}`"
+                >
+                  {{ statusLabel(meeting.attendances[0].AttandanceSTATUS) }}
+                </span>
+                <span v-else class="text-xs text-muted-foreground">-</span>
+              </TableCell>
               <TableCell>
                 <div class="flex gap-2">
                   <Button size="sm" variant="outline" @click="router.get(`/meetings/${meeting.id}`)">View</Button>

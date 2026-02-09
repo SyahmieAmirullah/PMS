@@ -61,7 +61,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { Plus, Search, ChevronLeft, ChevronRight, Eye, Mail, Phone, Users, Briefcase } from 'lucide-vue-next';
+import { Plus, Search, ChevronLeft, ChevronRight, Eye, Mail, Phone, Briefcase } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 
 //const { t } = useI18n();
@@ -414,7 +414,7 @@ const addStaff=() => {
               <TableHead>Contact</TableHead>
               <TableHead>Roles</TableHead>
               <TableHead>Projects</TableHead>
-              <TableHead>Attendance</TableHead>
+              <TableHead>Attendance Status</TableHead>
               <TableHead v-if="isAdmin">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -469,9 +469,22 @@ const addStaff=() => {
                 </div>
               </TableCell>
               <TableCell>
-                <div class="flex items-center gap-1">
-                  <Users class="h-4 w-4 text-muted-foreground" />
-                  <span class="text-sm font-medium">{{ staff.attendances_count ?? 0 }}</span>
+                <div class="flex flex-wrap gap-1">
+                  <Badge variant="outline" class="text-xs">
+                    Present: {{ staff.attendances_present_count ?? 0 }}
+                  </Badge>
+                  <Badge variant="outline" class="text-xs">
+                    Absent: {{ staff.attendances_absent_count ?? 0 }}
+                  </Badge>
+                  <Badge variant="outline" class="text-xs">
+                    Late: {{ staff.attendances_late_count ?? 0 }}
+                  </Badge>
+                  <Badge variant="outline" class="text-xs">
+                    Excused: {{ staff.attendances_excused_count ?? 0 }}
+                  </Badge>
+                  <Badge variant="outline" class="text-xs">
+                    Pending: {{ staff.attendances_pending_count ?? 0 }}
+                  </Badge>
                 </div>
               </TableCell>
               <TableCell v-if="isAdmin" class="align-middle">

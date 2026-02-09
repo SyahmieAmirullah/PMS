@@ -8,16 +8,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { computed, nextTick, onMounted, watch } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
+import { computed } from 'vue';
 
 import {
   Select,
@@ -63,88 +54,13 @@ const form = useForm({
 const projectOptions = computed(() => props.projects ?? []);
 
 const attendanceStatusOptions = [
+  { value: 'pending', label: 'Pending' },
   { value: 'present', label: 'Present' },
   { value: 'absent', label: 'Absent' },
   { value: 'late', label: 'Late' },
   { value: 'excused', label: 'Excused' },
 ];
 
-const mapInstances = new Map<number, L.Map>();
-const markerInstances = new Map<number, L.Marker>();
-
-const updateAttendanceLatLng = (index: number, latLng: L.LatLng) => {
-  form.attendances[index].AttandanceLAT = Number(latLng.lat.toFixed(7));
-  form.attendances[index].AttandanceLNG = Number(latLng.lng.toFixed(7));
-};
-
-const detectLocation = (index: number) => {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const latLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
-      updateAttendanceLatLng(index, latLng);
-
-      const attendanceId = form.attendances[index].id ?? index;
-      const map = mapInstances.get(attendanceId);
-      const marker = markerInstances.get(attendanceId);
-      if (map && marker) {
-        map.setView(latLng, 15);
-        marker.setLatLng(latLng);
-      }
-    },
-    () => {},
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
-};
-
-const initAttendanceMap = async (index: number) => {
-  const attendance = form.attendances[index];
-  const attendanceId = attendance.id ?? index;
-  const containerId = `attendance-map-${attendanceId}`;
-
-  if (mapInstances.has(attendanceId)) return;
-
-  await nextTick();
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const lat = attendance.AttandanceLAT ?? 3.1390;
-  const lng = attendance.AttandanceLNG ?? 101.6869;
-
-  const map = L.map(containerId).setView([lat, lng], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map);
-
-  const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-  marker.on('dragend', () => {
-    const pos = marker.getLatLng();
-    updateAttendanceLatLng(index, pos);
-  });
-
-  map.on('click', (e: L.LeafletMouseEvent) => {
-    marker.setLatLng(e.latlng);
-    updateAttendanceLatLng(index, e.latlng);
-  });
-
-  mapInstances.set(attendanceId, map);
-  markerInstances.set(attendanceId, marker);
-
-  if (attendance.AttandanceLAT == null || attendance.AttandanceLNG == null) {
-    detectLocation(index);
-  }
-};
-
-onMounted(() => {
-  form.attendances.forEach((_, index) => initAttendanceMap(index));
-});
-
-watch(
-  () => form.attendances.length,
-  () => {
-    form.attendances.forEach((_, index) => initAttendanceMap(index));
-  }
-);
 
 const submitForm = () => {
   form.put(`/meetings/${props.meeting.id}`);
@@ -272,32 +188,10 @@ const goBack = () => {
                 </div>
               </div>
 
-              <div class="mt-3 grid grid-cols-2 gap-4">
-                <div class="flex flex-col space-y-1">
-                  <Label>Reason (if absent)</Label>
-                  <Input v-model="form.attendances[index].AbsentREASON" placeholder="Reason" />
-                </div>
-
-                <div class="flex flex-col space-y-1">
-                  <Label>Location</Label>
-                  <Input v-model="form.attendances[index].AttandanceLOCATION" placeholder="Location" />
-                </div>
+              <div class="mt-3 flex flex-col space-y-1">
+                <Label>Reason (if absent)</Label>
+                <Input v-model="form.attendances[index].AbsentREASON" placeholder="Reason" />
               </div>
-
-              <div class="mt-3 flex items-center gap-3">
-                <Button size="sm" variant="outline" @click="detectLocation(index)">
-                  Use My Location
-                </Button>
-                <span class="text-xs text-muted-foreground">
-                  {{ attendance.AttandanceLAT ? `Lat: ${attendance.AttandanceLAT}` : 'Lat: -' }},
-                  {{ attendance.AttandanceLNG ? `Lng: ${attendance.AttandanceLNG}` : 'Lng: -' }}
-                </span>
-              </div>
-
-              <div
-                :id="`attendance-map-${attendance.id ?? index}`"
-                class="mt-3 h-[220px] w-full rounded border"
-              ></div>
             </div>
           </div>
 

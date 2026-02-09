@@ -13,10 +13,18 @@ class MeetingController extends Controller
 {
     public function index(Request $request)
     {
+        $staffUser = $request->user('staff');
+
         $query = Meeting::with(['project'])
             ->withCount(['attendances'])
             ->orderBy('MeetingDATE', 'desc')
             ->orderBy('MeetingTIME', 'desc');
+
+        if ($staffUser) {
+            $query->with(['attendances' => function ($q) use ($staffUser) {
+                $q->where('StaffID', $staffUser->id);
+            }]);
+        }
 
         if ($request->filled('MeetingTITLE')) {
             $query->where('MeetingTITLE', 'like', '%' . $request->input('MeetingTITLE') . '%');
@@ -93,7 +101,7 @@ class MeetingController extends Controller
                 return [
                     'MeetingID' => $meeting->id,
                     'StaffID' => $staff->id,
-                    'AttandanceSTATUS' => 'present',
+                    'AttandanceSTATUS' => 'pending',
                     'AttandanceDATE' => $meeting->MeetingDATE,
                     'AttandanceTIME' => $meeting->MeetingTIME,
                     'AbsentREASON' => null,
@@ -113,11 +121,27 @@ class MeetingController extends Controller
 
     public function show($id)
     {
-        $meeting = Meeting::with(['project', 'attendances.staff'])
+        $staffUser = request()->user('staff');
+
+        $meeting = Meeting::with(['project', 'project.staff', 'attendances.staff'])
             ->findOrFail($id);
+
+        $canSelfAttend = true;
+        if ($staffUser) {
+            $canSelfAttend = $meeting->project
+                && $meeting->project->staff()
+                    ->where('staff.id', $staffUser->id)
+                    ->exists();
+        }
+
+        $assignedStaffIds = $meeting->project
+            ? $meeting->project->staff->pluck('id')->all()
+            : [];
 
         return Inertia::render('Meeting/Show', [
             'meeting' => $meeting,
+            'canSelfAttend' => $canSelfAttend,
+            'assignedStaffIds' => $assignedStaffIds,
         ]);
     }
 
@@ -139,7 +163,7 @@ class MeetingController extends Controller
                 Attendance::create([
                     'MeetingID' => $meeting->id,
                     'StaffID' => $staff->id,
-                    'AttandanceSTATUS' => 'present',
+                    'AttandanceSTATUS' => 'pending',
                     'AttandanceDATE' => $meeting->MeetingDATE,
                     'AttandanceTIME' => $meeting->MeetingTIME,
                     'AbsentREASON' => null,
@@ -167,7 +191,7 @@ class MeetingController extends Controller
             'MeetingLINK' => 'nullable|url|max:2048',
             'attendances' => 'nullable|array',
             'attendances.*.id' => 'required|integer|exists:attendance,id',
-            'attendances.*.AttandanceSTATUS' => 'required|in:present,absent,late,excused',
+            'attendances.*.AttandanceSTATUS' => 'required|in:present,absent,late,excused,pending',
             'attendances.*.AttandanceTIME' => 'nullable',
             'attendances.*.AbsentREASON' => 'nullable|string',
             'attendances.*.AttandanceLOCATION' => 'nullable|string',
@@ -223,6 +247,46 @@ class MeetingController extends Controller
         return redirect()
             ->route('meetings.index')
             ->with('success', 'Meeting updated successfully!');
+    }
+
+    public function updateSelfAttendance(Request $request, $id)
+    {
+        $staffUser = $request->user('staff');
+        if (! $staffUser) {
+            return back()->with('error', 'You must be logged in as staff to update attendance.');
+        }
+
+        $validated = $request->validate([
+            'AttandanceSTATUS' => 'required|in:present,absent,late,excused,pending',
+            'AbsentREASON' => 'nullable|string|max:255',
+            'AttandanceLOCATION' => 'nullable|string|max:255',
+            'AttandanceLAT' => 'nullable|numeric',
+            'AttandanceLNG' => 'nullable|numeric',
+        ]);
+
+        $meeting = Meeting::with('project.staff')->findOrFail($id);
+        $isAssigned = $meeting->project
+            && $meeting->project->staff->contains('id', $staffUser->id);
+
+        if (! $isAssigned) {
+            return back()->with('error', 'You are not assigned to this meeting project.');
+        }
+
+        $attendance = Attendance::firstOrNew([
+            'MeetingID' => $meeting->id,
+            'StaffID' => $staffUser->id,
+        ]);
+
+        $attendance->AttandanceSTATUS = $validated['AttandanceSTATUS'];
+        $attendance->AttandanceDATE = $meeting->MeetingDATE;
+        $attendance->AttandanceTIME = $meeting->MeetingTIME;
+        $attendance->AbsentREASON = $validated['AbsentREASON'] ?? null;
+        $attendance->AttandanceLOCATION = $validated['AttandanceLOCATION'] ?? null;
+        $attendance->AttandanceLAT = $validated['AttandanceLAT'] ?? null;
+        $attendance->AttandanceLNG = $validated['AttandanceLNG'] ?? null;
+        $attendance->save();
+
+        return back()->with('success', 'Attendance updated successfully!');
     }
 
     public function destroy($id)

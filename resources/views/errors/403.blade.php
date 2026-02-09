@@ -3,29 +3,30 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Access Denied</title>
+    <title>Access Restricted</title>
     <style>
-      body { font-family: Arial, sans-serif; background: #f6f7fb; color: #222; margin: 0; }
+      body { font-family: Arial, sans-serif; background: rgba(17,24,39,0.45); color: #111; margin: 0; }
       .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-      .card { max-width: 520px; width: 100%; background: #fff; border: 1px solid #e6e8ef; border-radius: 12px; padding: 28px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
-      h1 { margin: 0 0 8px; font-size: 22px; }
-      p { margin: 0 0 16px; line-height: 1.5; color: #4b5563; }
-      .code { font-size: 12px; color: #9ca3af; }
-      .actions a { display: inline-block; padding: 10px 14px; border-radius: 8px; text-decoration: none; margin-right: 8px; }
+      .modal { max-width: 420px; width: 100%; background: #fff; border-radius: 12px; padding: 20px 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      h1 { margin: 0 0 6px; font-size: 18px; }
+      p { margin: 0 0 14px; line-height: 1.4; color: #4b5563; }
+      .actions { display: flex; gap: 8px; }
+      .actions a, .actions button { flex: 1; text-align: center; padding: 9px 12px; border-radius: 8px; text-decoration: none; font-size: 14px; border: none; cursor: pointer; }
       .primary { background: #111827; color: #fff; }
       .secondary { background: #eef2f7; color: #111827; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <div class="card">
-        <h1>Access denied</h1>
-        <p>You do not have access to this page or module. Please contact the administrator if you believe this is a mistake.</p>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" aria-describedby="message">
+        <h1 id="title">Access Restricted</h1>
+        <p id="message">
+          {{ $exception->getMessage() ?: 'You do not have permission to access this action.' }}
+        </p>
         <div class="actions">
-          <a class="primary" href="/dashboard">Go to Dashboard</a>
-          <a class="secondary" href="javascript:history.back()">Go Back</a>
+          <button class="secondary" type="button" onclick="history.back()">Go Back</button>
+          <a class="primary" href="/dashboard">Dashboard</a>
         </div>
-        <p class="code">Error 403</p>
       </div>
     </div>
   </body>

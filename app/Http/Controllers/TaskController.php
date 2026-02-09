@@ -13,9 +13,15 @@ class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Task::with(['project'])
+        $staffUser = $request->user('staff');
+
+        $query = Task::with(['project', 'staff'])
             ->orderBy('TaskDUE', 'asc')
             ->orderBy('created_at', 'desc');
+
+        if ($staffUser) {
+            $query->where('StaffID', $staffUser->id);
+        }
 
         // Apply filters
         if ($request->filled('TaskNAME')) {
@@ -48,6 +54,7 @@ class TaskController extends Controller
 
         // Get all projects for filter dropdown
         $projects = Project::select('id', 'ProjectNAME')
+            ->with(['staff:id,StaffNAME'])
             ->orderBy('ProjectNAME')
             ->get();
 
@@ -72,6 +79,7 @@ class TaskController extends Controller
     public function create(Request $request)
     {
         $projects = Project::select('id', 'ProjectNAME', 'ClientNAME')
+            ->with(['staff:id,StaffNAME'])
             ->orderBy('ProjectNAME')
             ->get();
 
@@ -90,8 +98,19 @@ class TaskController extends Controller
             'TaskDESC' => 'nullable|string',
             'TaskDUE' => 'required|date',
             'ProjectID' => 'required|exists:project,id',
+            'StaffID' => 'nullable|integer|exists:staff,id',
             'TaskSTATUS' => 'nullable|in:pending,in_progress,completed,cancelled',
         ]);
+
+        $project = Project::with('staff:id')->find($validated['ProjectID']);
+        if ($project) {
+            if ($project->staff->isNotEmpty() && empty($validated['StaffID'])) {
+                return back()->withErrors(['StaffID' => 'Please select staff for this project.'])->withInput();
+            }
+            if (!empty($validated['StaffID']) && ! $project->staff->contains('id', $validated['StaffID'])) {
+                return back()->withErrors(['StaffID' => 'Selected staff is not assigned to this project.'])->withInput();
+            }
+        }
 
         $task = Task::create($validated);
 
@@ -113,6 +132,11 @@ class TaskController extends Controller
         $task = Task::with(['project.staff'])
             ->findOrFail($id);
 
+        $staffUser = request()->user('staff');
+        if ($staffUser && (int) $task->StaffID !== (int) $staffUser->id) {
+            return back()->with('error', 'This task is not assigned to your account.');
+        }
+
         return Inertia::render('Task/ShowTask', [
             'task' => $task,
         ]);
@@ -125,15 +149,30 @@ class TaskController extends Controller
             'TaskDESC' => 'nullable|string',
             'TaskDUE' => 'required|date',
             'ProjectID' => 'required|exists:project,id',
+            'StaffID' => 'nullable|integer|exists:staff,id',
             'TaskSTATUS' => 'nullable|in:pending,in_progress,completed,cancelled',
         ]);
 
+        $project = Project::with('staff:id')->find($validated['ProjectID']);
+        if ($project) {
+            if ($project->staff->isNotEmpty() && empty($validated['StaffID'])) {
+                return back()->withErrors(['StaffID' => 'Please select staff for this project.'])->withInput();
+            }
+            if (!empty($validated['StaffID']) && ! $project->staff->contains('id', $validated['StaffID'])) {
+                return back()->withErrors(['StaffID' => 'Selected staff is not assigned to this project.'])->withInput();
+            }
+        }
+
         $task = Task::findOrFail($id);
+        $staffUser = $request->user('staff');
+        if ($staffUser && (int) $task->StaffID !== (int) $staffUser->id) {
+            return back()->with('error', 'You can only update tasks assigned to you.');
+        }
         $original = $task->getOriginal();
         $task->update($validated);
 
         $changes = [];
-        foreach (['TaskNAME', 'TaskDESC', 'TaskDUE', 'TaskSTATUS'] as $field) {
+        foreach (['TaskNAME', 'TaskDESC', 'TaskDUE', 'TaskSTATUS', 'StaffID'] as $field) {
             $oldValue = $original[$field] ?? null;
             $newValue = $task->$field ?? null;
             if ((string) $oldValue !== (string) $newValue) {
@@ -155,9 +194,13 @@ class TaskController extends Controller
             ->with('success', 'Task updated successfully!');
     }
 
-    public function markDone($id)
+    public function markDone(Request $request, $id)
     {
         $task = Task::findOrFail($id);
+        $staffUser = $request->user('staff');
+        if ($staffUser && (int) $task->StaffID !== (int) $staffUser->id) {
+            return back()->with('error', 'You can only mark tasks assigned to you.');
+        }
         $task->update(['TaskSTATUS' => 'completed']);
 
         ProjectLogService::log(
@@ -176,6 +219,10 @@ class TaskController extends Controller
     public function destroy($id)
     {
         $task = Task::findOrFail($id);
+        $staffUser = request()->user('staff');
+        if ($staffUser && (int) $task->StaffID !== (int) $staffUser->id) {
+            return back()->with('error', 'You can only delete tasks assigned to you.');
+        }
         $task->delete();
 
         return redirect()
@@ -189,6 +236,11 @@ class TaskController extends Controller
         $tasks = Task::where('ProjectID', $projectId)
             ->orderBy('TaskDUE', 'asc')
             ->get();
+
+        $staffUser = request()->user('staff');
+        if ($staffUser) {
+            $tasks = $tasks->where('StaffID', $staffUser->id)->values();
+        }
 
         return response()->json($tasks);
     }

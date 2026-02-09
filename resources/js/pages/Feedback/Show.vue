@@ -5,6 +5,7 @@ import BaseTitle from '@/components/ui/card/BaseTitle.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
+import { formatDateTime } from '@/lib/date';
 
 const props = defineProps({
   feedback: { type: Object, required: true },
@@ -37,7 +38,7 @@ const goBack = () => {
       <div class="grid grid-cols-2 gap-4">
         <div class="rounded-lg border bg-white p-4">
           <p class="text-sm font-medium text-muted-foreground">Feedback Time</p>
-          <p class="mt-2">{{ feedback.FeedbackTIME }}</p>
+          <p class="mt-2">{{ formatDateTime(feedback.FeedbackTIME) }}</p>
         </div>
       </div>
 

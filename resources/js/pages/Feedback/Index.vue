@@ -8,6 +8,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { formatDateTime } from '@/lib/date';
 
 import {
   Select,
@@ -155,7 +156,7 @@ const paginatedFeedback = computed(() => props.feedback?.data ?? []);
               <TableCell>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</TableCell>
               <TableCell class="font-medium">{{ item.FeedbackTITLE }}</TableCell>
               <TableCell>{{ item.project?.ProjectNAME ?? '-' }}</TableCell>
-              <TableCell>{{ item.FeedbackTIME }}</TableCell>
+              <TableCell>{{ formatDateTime(item.FeedbackTIME) }}</TableCell>
               <TableCell>
                 <div class="flex gap-2">
                   <Button size="sm" variant="outline" @click="router.get(`/feedback/${item.id}`)">View</Button>

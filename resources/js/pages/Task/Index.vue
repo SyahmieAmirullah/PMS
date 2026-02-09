@@ -64,7 +64,8 @@ import {
 import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar, AlertTriangle, CheckCircle } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isPast } from 'date-fns';
+import { parseISO, isPast } from 'date-fns';
+import { formatDate } from '@/lib/date';
 
 //const { t } = useI18n();
 const page = usePage();
@@ -127,6 +128,7 @@ const editTask = ref({
   TaskDESC: '',
   TaskDUE: '',
   ProjectID: '',
+  StaffID: '',
   TaskSTATUS: 'pending',
 });
 
@@ -137,6 +139,7 @@ const openEditDialog = (task: any) => {
     TaskDESC: task.TaskDESC ?? '',
     TaskDUE: task.TaskDUE,
     ProjectID: task.ProjectID,
+    StaffID: task.StaffID ?? '',
     TaskSTATUS: task.TaskSTATUS ?? 'pending',
   };
   showEditDialog.value = true;
@@ -151,6 +154,7 @@ const updateTask = () => {
       TaskDESC: editTask.value.TaskDESC,
       TaskDUE: editTask.value.TaskDUE,
       ProjectID: editTask.value.ProjectID,
+      StaffID: editTask.value.StaffID,
       TaskSTATUS: editTask.value.TaskSTATUS,
     },
     {
@@ -231,16 +235,6 @@ const activeFiltersCount = computed(() => {
   if (formCarian.value.status) count++;
   return count;
 });
-
-// Format date
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  try {
-    return format(parseISO(dateStr), 'dd MMM yyyy');
-  } catch {
-    return dateStr;
-  }
-};
 
 // Check if task is overdue
 const isOverdue = (dateStr: string) => {
@@ -375,6 +369,21 @@ const taskStatusOptions = [
 const addTask = () => {
   router.get('/tasks/create');
 };
+
+const editProject = computed(() => {
+  return (props.projects || []).find((p: any) => p.id === editTask.value.ProjectID);
+});
+
+const editProjectStaff = computed(() => editProject.value?.staff || []);
+
+watch(
+  () => editTask.value.ProjectID,
+  () => {
+    if (!editTask.value.StaffID) return;
+    const exists = (editProjectStaff.value || []).some((s: any) => s.id === editTask.value.StaffID);
+    if (!exists) editTask.value.StaffID = '';
+  }
+);
 </script>
 
 <template>
@@ -783,6 +792,30 @@ const addTask = () => {
                   type="date"
                 />
               </div>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+              <Label>Assign Staff</Label>
+              <Select v-model="editTask.StaffID">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Staff" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Staff</SelectLabel>
+                    <SelectItem
+                      v-for="staff in editProjectStaff"
+                      :key="staff.id"
+                      :value="staff.id"
+                    >
+                      {{ staff.StaffNAME }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <span v-if="editTask.ProjectID && editProjectStaff.length === 0" class="text-xs text-muted-foreground">
+                No staff assigned to this project.
+              </span>
             </div>
 
             <div class="flex flex-col space-y-1">

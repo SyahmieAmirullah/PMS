@@ -7,7 +7,7 @@ import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { toast } from 'vue-sonner';
 //import { useI18n } from 'vue-i18n';
 
@@ -41,17 +41,42 @@ const form = ref({
   TaskDESC: '',
   TaskDUE: '',
   ProjectID: '',
+  StaffID: '',
 });
 
 const errors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
+
+const selectedProject = computed(() => {
+  return (props.projects || []).find((p: any) => p.id === form.value.ProjectID);
+});
+
+const projectStaff = computed(() => selectedProject.value?.staff || []);
+
+const staffOptions = computed(() => {
+  return projectStaff.value || [];
+});
 
 // Set preselected project if provided
 onMounted(() => {
   if (props.preselectedProjectId) {
     form.value.ProjectID = Number(props.preselectedProjectId);
   }
+  resetStaffIfInvalid();
 });
+
+const resetStaffIfInvalid = () => {
+  if (!form.value.StaffID) return;
+  const exists = staffOptions.value.some((s: any) => s.id === form.value.StaffID);
+  if (!exists) form.value.StaffID = '';
+};
+
+watch(
+  () => form.value.ProjectID,
+  () => {
+    resetStaffIfInvalid();
+  }
+);
 
 const validateForm = () => {
   errors.value = {};
@@ -140,10 +165,10 @@ const goBack = () => {
               />
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col space-y-1">
-                <Label>Project <span class="text-red-500">*</span></Label>
-              <Select v-model="form.ProjectID">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col space-y-1">
+              <Label>Project <span class="text-red-500">*</span></Label>
+            <Select v-model="form.ProjectID">
                   <SelectTrigger :class="errors.ProjectID ? 'border-red-500' : ''">
                     <SelectValue placeholder="Select Project" />
                   </SelectTrigger>
@@ -166,20 +191,49 @@ const goBack = () => {
                 <span v-if="errors.ProjectID" class="text-xs text-red-500">
                   {{ errors.ProjectID }}
                 </span>
-              </div>
-
-              <div class="flex flex-col space-y-1">
-                <Label>Due Date <span class="text-red-500">*</span></Label>
-                <Input
-                  v-model="form.TaskDUE"
-                  type="date"
-                  :class="errors.TaskDUE ? 'border-red-500' : ''"
-                />
-                <span v-if="errors.TaskDUE" class="text-xs text-red-500">
-                  {{ errors.TaskDUE }}
-                </span>
-              </div>
             </div>
+
+            <div class="flex flex-col space-y-1">
+              <Label>Due Date <span class="text-red-500">*</span></Label>
+              <Input
+                v-model="form.TaskDUE"
+                type="date"
+                :class="errors.TaskDUE ? 'border-red-500' : ''"
+              />
+              <span v-if="errors.TaskDUE" class="text-xs text-red-500">
+                {{ errors.TaskDUE }}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col space-y-1">
+              <Label>Assign Staff</Label>
+              <Select v-model="form.StaffID" @update:modelValue="resetStaffIfInvalid">
+                <SelectTrigger :class="errors.StaffID ? 'border-red-500' : ''">
+                  <SelectValue placeholder="Select Staff" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Staff</SelectLabel>
+                    <SelectItem
+                      v-for="staff in staffOptions"
+                      :key="staff.id"
+                      :value="staff.id"
+                    >
+                      {{ staff.StaffNAME }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <span v-if="errors.StaffID" class="text-xs text-red-500">
+                {{ errors.StaffID }}
+              </span>
+              <span v-if="form.ProjectID && staffOptions.length === 0" class="text-xs text-muted-foreground">
+                No staff assigned to this project.
+              </span>
+            </div>
+          </div>
           </div>
         </div>
 

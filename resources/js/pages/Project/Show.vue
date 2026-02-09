@@ -39,7 +39,7 @@ import {
   MessageSquare,
   FolderOpen
 } from 'lucide-vue-next';
-import { format } from 'date-fns';
+import { formatDate, formatDateTime } from '@/lib/date';
 
 //const { t } = useI18n();
 
@@ -93,25 +93,6 @@ const formatTaskStatus = (status: string) => {
     cancelled: 'Cancelled',
   };
   return labels[status] || status;
-};
-
-// Format date
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  try {
-    return format(new Date(date), 'dd MMM yyyy');
-  } catch {
-    return date;
-  }
-};
-
-const formatDateTime = (date: string) => {
-  if (!date) return '-';
-  try {
-    return format(new Date(date), 'dd MMM yyyy, HH:mm');
-  } catch {
-    return date;
-  }
 };
 
 const formatLegacyDateTime = (date: string, time: string) => {
@@ -373,7 +354,7 @@ const getAttachmentUrl = (path: string) => {
                       {{ phase.PhaseDESC || 'No description' }}
                     </p>
                     <p v-if="phase.PhaseUPDATE" class="mt-2 text-xs text-muted-foreground">
-                      Last Update: {{ phase.PhaseUPDATE }}
+                      Last Update: {{ formatDate(phase.PhaseUPDATE) }}
                     </p>
                   </div>
                 </div>

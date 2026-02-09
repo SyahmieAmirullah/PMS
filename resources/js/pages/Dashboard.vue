@@ -7,7 +7,8 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { FolderKanban, CheckCircle2, PauseCircle, PlayCircle } from 'lucide-vue-next';
+import { FolderKanban, CheckCircle2, PauseCircle, PlayCircle, CalendarClock } from 'lucide-vue-next';
+import { formatDate } from '@/lib/date';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -18,6 +19,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const props = defineProps({
     projects: { type: Array, default: () => [] },
+    meetings: { type: Array, default: () => [] },
     stats: { type: Object, default: () => ({}) },
 });
 
@@ -130,6 +132,42 @@ const statusLabel = (status: string) => {
                     </div>
                 </div>
                 <p v-else class="text-sm text-muted-foreground">No projects assigned.</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <CalendarClock class="h-5 w-5 text-indigo-600" />
+                        <h3 class="text-lg font-semibold">Upcoming Meetings</h3>
+                    </div>
+                    <span class="text-sm text-muted-foreground">Next 5</span>
+                </div>
+                <div v-if="props.meetings.length" class="grid gap-3 md:grid-cols-2">
+                    <div
+                        v-for="meeting in props.meetings"
+                        :key="meeting.id"
+                        class="rounded-lg border p-4"
+                    >
+                        <div class="flex items-center justify-between">
+                            <div class="font-medium">{{ meeting.MeetingTITLE }}</div>
+                            <span class="text-xs text-muted-foreground">
+                                {{ formatDate(meeting.MeetingDATE) }} {{ meeting.MeetingTIME }}
+                            </span>
+                        </div>
+                        <div class="mt-2 text-sm text-muted-foreground">
+                            Project: {{ meeting.project?.ProjectNAME || '-' }}
+                        </div>
+                        <div class="mt-3">
+                            <Link
+                                :href="`/meetings/${meeting.id}`"
+                                class="text-sm text-primary hover:underline"
+                            >
+                                View Meeting
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+                <p v-else class="text-sm text-muted-foreground">No upcoming meetings.</p>
             </div>
         </div>
     </AppLayout>

@@ -15,6 +15,23 @@ class StaffController extends Controller
     {
         $query = Staff::with(['roles'])
             ->withCount(['projects'])
+            ->withCount([
+                'attendances as attendances_present_count' => function ($q) {
+                    $q->where('AttandanceSTATUS', 'present');
+                },
+                'attendances as attendances_absent_count' => function ($q) {
+                    $q->where('AttandanceSTATUS', 'absent');
+                },
+                'attendances as attendances_late_count' => function ($q) {
+                    $q->where('AttandanceSTATUS', 'late');
+                },
+                'attendances as attendances_excused_count' => function ($q) {
+                    $q->where('AttandanceSTATUS', 'excused');
+                },
+                'attendances as attendances_pending_count' => function ($q) {
+                    $q->where('AttandanceSTATUS', 'pending');
+                },
+            ])
             ->orderBy('created_at', 'desc');
 
         // Apply filters
