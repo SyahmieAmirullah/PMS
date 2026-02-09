@@ -25,11 +25,6 @@ watch(
 
 const handleClose = () => {
     isOpen.value = false;
-    if (window.history.length > 1) {
-        window.history.back();
-    } else {
-        window.location.href = '/dashboard';
-    }
 };
 </script>
 

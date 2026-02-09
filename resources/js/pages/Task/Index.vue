@@ -586,6 +586,7 @@ watch(
               <TableHead>Project</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Due Date</TableHead>
+              <TableHead>Assigned To</TableHead>
               <TableHead>Status</TableHead>
               <TableHead v-if="page.props.can">Actions</TableHead>
             </TableRow>
@@ -621,6 +622,9 @@ watch(
                     {{ formatDate(task.TaskDUE) }}
                   </span>
                 </div>
+              </TableCell>
+              <TableCell>
+                <span class="text-sm">{{ task.staff?.StaffNAME || '-' }}</span>
               </TableCell>
               <TableCell>
                 <Badge :class="getTaskBadge(task).class">

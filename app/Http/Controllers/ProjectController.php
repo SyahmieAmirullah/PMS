@@ -65,7 +65,9 @@ class ProjectController extends Controller
     public function create()
     {
         $staffList = Staff::select('id', 'StaffNAME', 'StaffEMAIL')
-            ->with(['roles'])
+            ->with(['roles' => function ($query) {
+                $query->select('id', 'StaffID', 'RoleTYPE');
+            }])
             ->orderBy('StaffNAME')
             ->get();
 
@@ -164,7 +166,8 @@ class ProjectController extends Controller
                 $query->orderBy('created_at', 'asc');
             },
             'tasks' => function($query) {
-                $query->orderBy('TaskDUE', 'asc');
+                $query->with(['staff'])
+                    ->orderBy('TaskDUE', 'asc');
             },
             'feedback' => function($query) {
                 $query->orderBy('FeedbackTIME', 'desc');
@@ -190,6 +193,7 @@ class ProjectController extends Controller
             ->findOrFail($id);
 
         $staffList = Staff::select('id', 'StaffNAME', 'StaffEMAIL')
+            ->with(['roles'])
             ->orderBy('StaffNAME')
             ->get();
 

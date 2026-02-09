@@ -270,7 +270,13 @@ const goBack = () => {
                 class="flex-1 cursor-pointer text-sm font-medium"
               >
                 <div>{{ staff.StaffNAME }}</div>
-                <div class="text-xs text-muted-foreground">{{ staff.StaffEMAIL }}</div>
+                <div class="text-xs text-muted-foreground">
+                  {{
+                    staff.roles && staff.roles.length
+                      ? staff.roles.map((r: any) => r.RoleTYPE).join(', ')
+                      : 'No roles'
+                  }}
+                </div>
               </label>
             </div>
 

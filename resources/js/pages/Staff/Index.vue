@@ -506,11 +506,6 @@ const addStaff=() => {
                         Edit
                       </DropdownMenuItem>
                     </Link>
-                    <Link :href="`/staff/${staff.id}/edit`" class="no-underline">
-                      <DropdownMenuItem>
-                        Edit Roles
-                      </DropdownMenuItem>
-                    </Link>
                     <DropdownMenuItem
                       class="text-red-600"
                       @click="openDeleteDialog(staff.id)"

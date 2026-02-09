@@ -288,6 +288,7 @@ const getAttachmentUrl = (path: string) => {
                 <TableHead>Task Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Due Date</TableHead>
+                <TableHead>Assigned To</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead class="text-right">Action</TableHead>
               </TableRow>
@@ -301,6 +302,9 @@ const getAttachmentUrl = (path: string) => {
                       <Calendar class="h-4 w-4 text-muted-foreground" />
                       {{ formatDate(task.TaskDUE) }}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span class="text-sm">{{ task.staff?.StaffNAME || '-' }}</span>
                   </TableCell>
                   <TableCell>
                     <Badge :class="getTaskStatusColor(task.TaskSTATUS)">
