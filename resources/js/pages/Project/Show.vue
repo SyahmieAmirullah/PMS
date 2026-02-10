@@ -123,9 +123,9 @@ const solvedFeedbackIds = ref<Set<number>>(new Set());
 
 const isFeedbackSolved = (id: number) => solvedFeedbackIds.value.has(id);
 
-const markFeedbackSolved = (id: number) => {
-  solvedFeedbackIds.value.add(id);
-};
+// const markFeedbackSolved = (id: number) => {
+//   solvedFeedbackIds.value.add(id);
+// };
 
 const getAttachmentUrl = (path: string) => {
   if (!path) return '#';
@@ -405,7 +405,7 @@ const getAttachmentUrl = (path: string) => {
                       <span class="text-xs text-red-700">
                         {{ formatDateTime(feedback.FeedbackTIME) }}
                       </span>
-                      <Button
+                      <!-- <Button
                         v-if="!isFeedbackSolved(feedback.id)"
                         size="sm"
                         variant="outline"
@@ -413,7 +413,7 @@ const getAttachmentUrl = (path: string) => {
                         @click="markFeedbackSolved(feedback.id)"
                       >
                         Solve
-                      </Button>
+                      </Button> -->
                     </div>
                   </div>
                   <p class="mt-2 text-sm text-red-900/80">{{ feedback.FeedbackDESC || '-' }}</p>

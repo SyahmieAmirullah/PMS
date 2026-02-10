@@ -79,7 +79,12 @@ class TaskController extends Controller
     public function create(Request $request)
     {
         $projects = Project::select('id', 'ProjectNAME', 'ClientNAME')
-            ->with(['staff:id,StaffNAME'])
+            ->with(['staff' => function ($query) {
+                $query->select('staff.id', 'StaffNAME')
+                    ->with(['roles' => function ($roleQuery) {
+                        $roleQuery->select('id', 'StaffID', 'RoleTYPE');
+                    }]);
+            }])
             ->orderBy('ProjectNAME')
             ->get();
 

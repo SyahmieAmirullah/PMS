@@ -222,6 +222,13 @@ const goBack = () => {
                       :value="staff.id"
                     >
                       {{ staff.StaffNAME }}
+                      <span class="text-xs text-muted-foreground ml-2">
+                        {{
+                          staff.roles && staff.roles.length
+                            ? staff.roles.map((r: any) => r.RoleTYPE).join(', ')
+                            : 'No roles'
+                        }}
+                      </span>
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>
