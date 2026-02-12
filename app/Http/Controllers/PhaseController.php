@@ -106,7 +106,7 @@ class PhaseController extends Controller
         }
 
         return redirect()
-            ->route('phases.index')
+            ->route('projects.show', $phase->ProjectID)
             ->with('success', 'Phase created successfully!');
     }
 

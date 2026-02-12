@@ -128,7 +128,7 @@ class TaskController extends Controller
         );
 
         return redirect()
-            ->route('task.index')
+            ->route('projects.show', $task->ProjectID)
             ->with('success', 'Task created successfully!');
     }
 

@@ -289,10 +289,10 @@ const addStaff=() => {
           <h3 class="mt-2 text-2xl font-bold text-blue-600">{{ stats?.withProjects ?? 0 }}</h3>
         </div>
 
-        <div class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+        <!-- <div class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
           <p class="text-sm font-medium text-muted-foreground">Total Roles</p>
           <h3 class="mt-2 text-2xl font-bold text-green-600">{{ stats?.roles ?? 0 }}</h3>
-        </div>
+        </div> -->
 
         <div class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
           <p class="text-sm font-medium text-muted-foreground">Active Projects</p>
